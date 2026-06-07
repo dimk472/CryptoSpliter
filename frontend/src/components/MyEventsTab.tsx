@@ -27,6 +27,7 @@ type SplitEvent = {
     creator_wallet: string;
     created_at: string;
     chain_id?: number;
+    currency?: string;
     role?: 'creator' | 'debtor';
     participants: EventParticipant[];
 };
@@ -95,11 +96,11 @@ function EventCard({
     walletAddress: string;
     onPay: (eventId: string) => void;
     paying: boolean;
-    currencySymbol: string;
+    currencySymbol: string | undefined;
 }) {
     const amt = parseFloat(event.total_amount) || 0;
     const debtors = event.participants.filter(p => !p.is_owner);
-    const perPerson = event.participants.length > 0 ? (amt / event.participants.length).toFixed(4) : '0.0000';
+    const perPerson = event.participants.length > 0 ? (amt / event.participants.length).toFixed(2) : '0.00';
     const status = getStatus(event);
     const paidCount = debtors.filter(p => p.paid).length;
     const icon = CATEGORY_ICONS[event.category] || '📦';
@@ -125,8 +126,8 @@ function EventCard({
 
                 <div className="me-card-right">
                     <div className="me-amount-col">
-                        <span className="me-amount">{amt} {currencySymbol}</span>
-                        <span className="me-per">{perPerson} {currencySymbol} / person</span>
+                        <span className="me-amount">{amt} {event.currency}</span>
+                        <span className="me-per">{perPerson} {event.currency} / person</span>
                     </div>
                     <span className={`me-badge me-badge--${status}`}>
                         {status === 'settled' ? '✓ Settled' : status === 'partial' ? '◑ Partial' : '○ Pending'}
@@ -216,7 +217,6 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
 
     const liveAccount = useActiveAccount();
     const activeChain = useActiveWalletChain();
-    const currencySymbol = activeChain?.nativeCurrency?.symbol ?? 'ETH';
 
     useEffect(() => {
         if (!walletAddress) return;
@@ -243,7 +243,6 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
     const settledCount = events.filter(ev => getStatus(ev) === 'settled').length;
     const pendingCount = events.filter(ev => getStatus(ev) === 'pending').length;
     const partialCount = events.filter(ev => getStatus(ev) === 'partial').length;
-    const totalAmount = events.reduce((sum, ev) => sum + (parseFloat(ev.total_amount) || 0), 0);
 
     const filteredEvents = events.filter(ev => {
         if (filter === 'all') return true;
@@ -272,7 +271,7 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
 
             const shareAmount = await readContract({
                 contract: getEventContract(paymentChain),
-                method: "getPrice",
+                method: "getSharedPriceInEth",
                 params: [offChainIdBytes32],
             });
 
@@ -301,6 +300,7 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                     debtor_wallet: walletAddress,
                     chain_id: paymentChain.id,
                     tx_hash: res.transactionHash,
+                    currency: event.currency,
                 }),
             });
 
@@ -352,10 +352,6 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                             <div className="me-stat">
                                 <span className="me-stat-value">{pendingCount}</span>
                                 <span className="me-stat-label">Pending</span>
-                            </div>
-                            <div className="me-stat">
-                                <span className="me-stat-value">{totalAmount.toFixed(4)} {currencySymbol}</span>
-                                <span className="me-stat-label">Total amount</span>
                             </div>
                         </div>
 
@@ -419,7 +415,7 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                                 walletAddress={walletAddress}
                                 onPay={markPaid}
                                 paying={payingEventId === ev.off_chain_id}
-                                currencySymbol={currencySymbol}
+                                currencySymbol={ev.currency}
                             />
                         ))}
                     </div>

@@ -10,11 +10,11 @@ import {
     AccountBalance,
     useActiveWallet,
 } from "thirdweb/react";
-import { client } from "../ThirdwebClient";
+import { client } from "../ThirdwebClient.tsx";
 import { createWallet } from "thirdweb/wallets";
 import React, { useState, useEffect } from 'react';
-import TermsOfUse from '../components/TermsOfUse';
-import PrivacyPolicy from '../components/PrivacyPolicy';
+import TermsOfUse from './TermsOfUse.tsx';
+import PrivacyPolicy from './PrivacyPolicy.tsx';
 import { shortenAddress } from "thirdweb/utils";
 import { ethers } from "ethers";
 import {
@@ -31,11 +31,11 @@ import {
 } from "thirdweb/chains";
 import MyEvents from "./MyEventsTab.tsx";
 import { prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
-import { getEventContract } from "../blokchain/contract";
+import { getEventContract } from "../blokchain/contract.ts";
 import '../components/styles/CryptoSpliter.css'
 import '../components/styles/splitingApp.css'
 import { parseEther } from "ethers"
-import LoadingEffect from '../components/loadingEffect/LoadingEffect.tsx';
+import LoadingEffect from './loadingEffect/LoadingEffect.tsx';
 
 const COLORS = ['#0ea5e9', '#0369a1', '#38bdf8', '#0c1825', '#3d5a74', '#22c55e'];
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
@@ -60,6 +60,25 @@ const wallets = [
     createWallet("io.rabby"),
     createWallet("io.zerion.wallet"),
 ];
+
+function currencyToUsd(
+    amount: number,
+    currency: string,
+    rates: Record<string, number>
+): number {
+
+    if (currency === "USD") {
+        return amount;
+    }
+
+    const rate = rates[currency];
+
+    if (!rate) {
+        return 0;
+    }
+
+    return amount / rate;
+}
 
 function getTxUrl(chain: any, txHash: string) {
     if (!txHash) return 'about:blank';
@@ -90,7 +109,10 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
     const [currentStep, setCurrentStep] = useState(1);
     const [eventName, setEventName] = useState('');
     const [totalAmount, setTotalAmount] = useState('');
+    const [totalAmountInUsd, setTotalAmountInUsd] = useState<number>(0);
+    const [rates, setRates] = useState<Record<string, number>>({});
     const [category, setCategory] = useState('');
+    const [currency, setCurrency] = useState('');
     const [myAddress, setMyAddress] = useState('');
     const [participantCount, setParticipantCount] = useState(3);
     const [participants, setParticipants] = useState<Participant[]>([]);
@@ -111,6 +133,45 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
     }, [walletAddress]);
 
     useEffect(() => {
+        async function loadRates() {
+            try {
+                const response = await fetch(
+                    "https://open.er-api.com/v6/latest/USD"
+
+                );
+
+                const data = await response.json();
+
+                setRates(data.rates);
+            } catch (error) {
+                console.error("Failed to load exchange rates:", error);
+            }
+        }
+
+        loadRates();
+    }, []);
+
+    useEffect(() => {
+        if (!totalAmount || !currency) {
+            setTotalAmountInUsd(0);
+            return;
+        }
+
+        try {
+            const usd = currencyToUsd(
+                parseFloat(totalAmount),
+                currency,
+                rates
+            );
+
+            setTotalAmountInUsd(usd);
+        } catch (error) {
+            console.error(error);
+            setTotalAmountInUsd(0);
+        }
+    }, [totalAmount, currency, rates]);
+
+    useEffect(() => {
         setParticipants(prev => {
             const updated: Participant[] = [];
             for (let i = 0; i < participantCount; i++) {
@@ -128,13 +189,13 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
     if (!walletAddress) return null;
 
     const amt = parseFloat(totalAmount) || 0;
-    const eachOwes = amt > 0 ? (amt / participantCount).toFixed(4) : '0.0000';
-    const symbol = activeChain?.nativeCurrency?.symbol ?? 'ETH';
+    const eachOwes = amt > 0 ? (amt / participantCount).toFixed(2) : '0.00';
 
     const goStep = (step: number) => setCurrentStep(step);
 
     const goStep2 = () => {
         if (!eventName.trim()) { alert('Please fill in event name.'); return; }
+        if (!currency) { alert('Please select a currency.'); return; }
         if (!totalAmount || parseFloat(totalAmount) <= 0) { alert('Please enter a valid amount.'); return; }
         if (!myAddress.trim() || !myAddress.startsWith('0x')) { alert('Please enter a valid wallet address starting with 0x.'); return; }
         goStep(2);
@@ -170,7 +231,9 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
             const rawHash = ethers.keccak256(ethers.toUtf8Bytes(eventData));
             const offChainId = ('0x' + rawHash.slice(2).padStart(64, '0')) as `0x${string}`;
 
-            const totalAmountWei = parseEther(totalAmount.toString());
+            // Μετέτρεψε το usd σε string με ακριβώς 18 decimals
+            const usdString = totalAmountInUsd.toFixed(18);
+            const totalAmountToUsd = parseEther(usdString); // ethers parseEther = * 1e18, ασφαλές   
 
             const otherAddresses = participants
                 .filter(p => !p.isYou)
@@ -179,7 +242,7 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
             const tx = prepareContractCall({
                 contract: getEventContract(activeChain),
                 method: "createEvent",
-                params: [offChainId, totalAmountWei, otherAddresses],
+                params: [offChainId, totalAmountToUsd, otherAddresses],
             });
 
             const txResult = await sendTransaction({
@@ -206,6 +269,7 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                     category,
                     creator_wallet: creatorAddress,
                     chain_id: activeChain.id,
+                    currency: currency,
                     tx_hash: txResult.transactionHash,
                     participants: participants.map(p => ({
                         name: p.name,
@@ -284,20 +348,68 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                     onChange={(e) => setEventName(e.target.value)}
                                 />
                             </div>
+                            <div className="field-group">
+                                <label className="field-label">Select Currency</label>
+                                <select
+                                    className="field-input"
+                                    value={currency}
+                                    onChange={(e) => setCurrency(e.target.value)}
+                                >
+                                    <option value="">Select currency</option>
+                                    <option value="USD">USD - US Dollar</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                    <option value="GBP">GBP - British Pound</option>
+                                    <option value="JPY">JPY - Japanese Yen</option>
+                                    <option value="CHF">CHF - Swiss Franc</option>
+                                    <option value="CAD">CAD - Canadian Dollar</option>
+                                    <option value="AUD">AUD - Australian Dollar</option>
+                                    <option value="NZD">NZD - New Zealand Dollar</option>
+                                    <option value="CNY">CNY - Chinese Yuan</option>
+                                    <option value="HKD">HKD - Hong Kong Dollar</option>
+                                    <option value="SGD">SGD - Singapore Dollar</option>
+                                    <option value="SEK">SEK - Swedish Krona</option>
+                                    <option value="NOK">NOK - Norwegian Krone</option>
+                                    <option value="DKK">DKK - Danish Krone</option>
+                                    <option value="PLN">PLN - Polish Zloty</option>
+                                    <option value="CZK">CZK - Czech Koruna</option>
+                                    <option value="HUF">HUF - Hungarian Forint</option>
+                                    <option value="RON">RON - Romanian Leu</option>
+                                    <option value="TRY">TRY - Turkish Lira</option>
+                                    <option value="BGN">BGN - Bulgarian Lev</option>
+                                    <option value="RSD">RSD - Serbian Dinar</option>
+                                    <option value="UAH">UAH - Ukrainian Hryvnia</option>
+                                    <option value="INR">INR - Indian Rupee</option>
+                                    <option value="KRW">KRW - South Korean Won</option>
+                                    <option value="THB">THB - Thai Baht</option>
+                                    <option value="MYR">MYR - Malaysian Ringgit</option>
+                                    <option value="IDR">IDR - Indonesian Rupiah</option>
+                                    <option value="PHP">PHP - Philippine Peso</option>
+                                    <option value="VND">VND - Vietnamese Dong</option>
+                                    <option value="MXN">MXN - Mexican Peso</option>
+                                    <option value="BRL">BRL - Brazilian Real</option>
+                                    <option value="ARS">ARS - Argentine Peso</option>
+                                    <option value="ZAR">ZAR - South African Rand</option>
+                                    <option value="AED">AED - UAE Dirham</option>
+                                    <option value="SAR">SAR - Saudi Riyal</option>
+                                    <option value="EGP">EGP - Egyptian Pound</option>
+                                </select>
+
+                            </div>
 
                             <div className="field-row">
                                 <div className="field-group">
-                                    <label className="field-label">Total amount paid ({symbol})</label>
+                                    <label className="field-label">Total amount paid ({currency})</label>
                                     <input
                                         className="field-input"
                                         type="number"
-                                        step="0.001"
+                                        step="0.01"
                                         min="0"
-                                        placeholder="0.00"
+                                        placeholder={`0.00 ${currency}`}
                                         value={totalAmount}
                                         onChange={(e) => setTotalAmount(e.target.value)}
                                     />
                                 </div>
+
                                 <div className="field-group">
                                     <label className="field-label">Category</label>
                                     <select
@@ -393,9 +505,17 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                     ['Event', eventName || '—'],
                                     ['Network', activeChain?.name ?? 'Unknown'],
                                     ['Category', category || 'Uncategorized'],
-                                    ['Total amount', `${amt} ${symbol}`, 'blue'],
+                                    ['Currency', currency || '—'],
+                                    ['Total amount', `${amt} ${currency}`, 'blue'],
                                     ['Participants', `${participantCount} people`],
-                                    ['Each owes', `${eachOwes} ${symbol}`, 'blue'],
+                                    ['Each owes', `${eachOwes} ${currency}`, 'blue'],
+                                    [
+                                        'Total in USD',
+                                        Object.keys(rates).length
+                                            ? `$${totalAmountInUsd.toFixed(2)}`
+                                            : 'Loading rates...',
+                                        'blue'
+                                    ],
                                 ].map(([label, value, accent]) => (
                                     <div className="summary-row" key={label as string}>
                                         <span className="summary-label">{label}</span>
@@ -412,7 +532,7 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                         <div className="sp-bar-wrap">
                                             <div className="sp-bar" style={{ width: `${Math.round(100 / participantCount)}%` }} />
                                         </div>
-                                        <span className="sp-amt">{eachOwes} {symbol}</span>
+                                        <span className="sp-amt">{eachOwes} {currency}</span>
                                     </div>
                                 ))}
                             </div>
@@ -450,8 +570,8 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                 {[
                                     ['Event', eventName],
                                     ['Network', activeChain?.name ?? 'Unknown'],
-                                    ['Total', `${amt} ${symbol}`, 'blue'],
-                                    ['Per person', `${eachOwes} ${symbol}`, 'blue'],
+                                    ['Total', `${amt} ${currency}`, 'blue'],
+                                    ['Per person', `${eachOwes} ${currency}`, 'blue'],
                                     ['Awaiting payments from', `${participantCount - 1} participants`],
                                 ].map(([label, value, accent], i, arr) => (
                                     <div
@@ -463,6 +583,9 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                         <span className={`summary-value${accent ? ' blue' : ''}`}>{value}</span>
                                     </div>
                                 ))}
+
+
+
 
                                 <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
                                     <span className="on-chain-tag">
@@ -759,7 +882,7 @@ function CryptoSpliter() {
 
                         <div className="footer-bottom">
                             <div className="footer-bottom-left">
-                                <span>© {new Date().getFullYear()} CryptoSpliter. All rights reserved.</span>
+                                <span>© {new Date().getFullYear()} CryptoSplitter. All rights reserved.</span>
                             </div>
                             <div className="footer-bottom-right">
                                 <a href="#" onClick={openPrivacyPolicy}>Privacy</a>

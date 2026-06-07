@@ -1,4 +1,4 @@
-import CryptoSpliter from "./components/CryptoSpliter";
+import CryptoSpliter from "./components/CryptoSplitter";
 import { ThirdwebProvider } from "thirdweb/react";
 
 import "./App.css";

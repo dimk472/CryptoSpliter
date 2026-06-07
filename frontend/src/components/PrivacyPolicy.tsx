@@ -1,6 +1,6 @@
 import './styles/Legal.css';
 
-const BRAND = 'CryptoSpliter';
+const BRAND = 'CryptoSplitter';
 const DATE = 'May 2025';
 
 type Section = {
