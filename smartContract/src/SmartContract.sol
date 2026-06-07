@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import {PriceConverter} from "./PriceConverter.sol";
+
 contract SmartContract {
+    uint256 constant TOLERANCE_BPS = 200;
+    using PriceConverter for uint256;
+    AggregatorV3Interface private s_priceFeed;
     error NotOwner();
     error NotEnoughParticipants();
     error EventClosed();
@@ -34,7 +40,7 @@ contract SmartContract {
         uint _eventId,
         bytes32 _offChainId,
         address _owner,
-        uint _price,
+        uint _priceUsd,
         uint _shareAmount
     );
 
@@ -56,8 +62,9 @@ contract SmartContract {
 
     Event[] public events;
 
-    constructor() {
+    constructor(address priceFeed) {
         contractOwner = msg.sender;
+        s_priceFeed = AggregatorV3Interface(priceFeed);
     }
 
     function _onlyOwner() internal view {
@@ -79,7 +86,7 @@ contract SmartContract {
     // -------------------------
     function createEvent(
         bytes32 _offChainId,
-        uint256 _price,
+        uint256 _priceUsd,
         address[] memory _participants
     ) public {
         if (_participants.length == 0) revert NotEnoughParticipants();
@@ -93,8 +100,8 @@ contract SmartContract {
         e.owner = payable(msg.sender);
         e.eventId = eventId;
         e.offChainId = _offChainId;
-        e.totalAmount = _price;
-        e.shareAmount = _price / totalParticipants;
+        e.totalAmount = _priceUsd;
+        e.shareAmount = _priceUsd / totalParticipants;
         e.status = EventStatus.Opened;
         e.participantsCount = totalParticipants;
         e.havePaidParticipants = 1;
@@ -130,9 +137,12 @@ contract SmartContract {
         if (!e.isParticipant[msg.sender]) revert NotAParticipant();
         if (e.hasPaid[msg.sender]) revert HasAlreadyPaid();
 
+        uint256 amountInUsd = msg.value.getConversionRate(s_priceFeed);
+
         uint256 share = e.shareAmount;
-        if (msg.value < share) revert NotEnoughEther();
-        if (msg.value > share) revert TooMuchEther();
+        uint256 tolerance = (share * TOLERANCE_BPS) / 10000;
+        if (amountInUsd < share - tolerance) revert NotEnoughEther();
+        if (amountInUsd > share + tolerance) revert TooMuchEther();
 
         e.hasPaid[msg.sender] = true;
         e.havePaidParticipants++;
@@ -140,7 +150,7 @@ contract SmartContract {
         (bool sent, ) = e.owner.call{value: msg.value}("");
         if (!sent) revert ErrorTransferingEther();
 
-        emit Payment(msg.sender, eventId, e.offChainId, msg.value, e.owner);
+        emit Payment(msg.sender, eventId, e.offChainId, amountInUsd, e.owner);
     }
 
     // -------------------------
@@ -152,6 +162,13 @@ contract SmartContract {
 
     function getPrice(bytes32 _offChainId) public view returns (uint256) {
         return events[_getEventId(_offChainId)].shareAmount;
+    }
+
+    function getSharedPriceInEth(
+        bytes32 _offChainId
+    ) public view returns (uint256) {
+        uint256 share = events[_getEventId(_offChainId)].shareAmount;
+        return share.getEthAmountFromUsd(s_priceFeed);
     }
 
     function completed(bytes32 _offChainId) external view returns (bool) {

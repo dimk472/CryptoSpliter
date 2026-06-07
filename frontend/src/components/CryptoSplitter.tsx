@@ -17,6 +17,7 @@ import TermsOfUse from './TermsOfUse.tsx';
 import PrivacyPolicy from './PrivacyPolicy.tsx';
 import { shortenAddress } from "thirdweb/utils";
 import { ethers } from "ethers";
+import logo from '../assets/logo.png';
 import {
     ethereum,
     sepolia,
@@ -713,7 +714,7 @@ function CryptoSpliter() {
                 <header className="header" id="header">
                     <div className="header-container">
                         <a href="#home" className="logo">
-                            <img src="../src/assets/logo.png" alt="CryptoSpliter Logo" />
+                            <img src={logo} alt="CryptoSpliter Logo" />
                         </a>
                         <nav className="nav" id="nav">
                             <ul className="nav-list">
