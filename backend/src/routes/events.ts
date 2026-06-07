@@ -17,7 +17,7 @@ router.get("/", async (req, res) => {
       await supabase
         .from("events")
         .select(
-          "id, off_chain_id, title, category, total_amount, creator_wallet, created_at, chain_id",
+          "id, off_chain_id, title, category, total_amount, creator_wallet, created_at, chain_id, currency",
         )
         .ilike("creator_wallet", wallet)
         .order("created_at", { ascending: false });
@@ -61,7 +61,7 @@ router.get("/", async (req, res) => {
         await supabase
           .from("events")
           .select(
-            "id, off_chain_id, title, category, total_amount, creator_wallet, created_at, chain_id",
+            "id, off_chain_id, title, category, total_amount, creator_wallet, created_at, chain_id, currency",
           )
           .in("id", missingDebtorEventIds)
           .order("created_at", { ascending: false });
@@ -155,6 +155,7 @@ router.post("/", async (req, res) => {
       creator_wallet,
       off_chain_id,
       chain_id,
+      currency,
       participants = [],
     } = req.body;
 
@@ -195,6 +196,7 @@ router.post("/", async (req, res) => {
           creator_wallet: normalizedCreatorWallet,
           off_chain_id: off_chain_id ?? null,
           chain_id: chain_id ?? null,
+          currency: currency ?? null,
         },
       ])
       .select()
