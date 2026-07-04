@@ -1,0 +1,66 @@
+.top-half,
+.bottom-half {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: #000000;
+  z-index: 9999;
+  transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+  overflow: hidden;
+}
+
+.top-half {
+  top: 0;
+  height: 50vh;
+  transform: translateY(0);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.top-half.reveal {
+  transform: translateY(-100%);
+}
+
+.bottom-half {
+  bottom: 0;
+  height: 50vh;
+  transform: translateY(0);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.bottom-half.reveal {
+  transform: translateY(100%);
+}
+
+.top-half img,
+.bottom-half img {
+  filter: brightness(0) invert(1);
+  opacity: 0.96;
+}
+
+.hero {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
+}
+
+.hero.is-ready {
+  opacity: 1;
+  visibility: visible;
+}
+
+.intro-bg {
+  overflow: hidden;
+  height: 100vh;
+}
+
+.intro-bg body {
+  overflow: hidden;
+  height: 100vh;
+}

@@ -4,10 +4,14 @@ import { getContract } from "thirdweb";
 import { client } from "../ThirdwebClient";
 
 export const EVENT_CONTRACT_ADDRESS = {
-  11155111: "0x219dbA77360054Ea2c002E4ccc88ABd935Fa6CbE",
+  11155111: "0x846E85305636fCe90FcF995E89E6a9941EFAD931",
 };
 
-export function getEventContract(chain: any) {
+type ChainWithId = {
+  id: number;
+};
+
+export function getEventContract(chain: ChainWithId) {
   const address =
     EVENT_CONTRACT_ADDRESS[chain.id as keyof typeof EVENT_CONTRACT_ADDRESS];
 
@@ -17,445 +21,219 @@ export function getEventContract(chain: any) {
 
   return getContract({
     client,
-    chain,
+    chain: chain as Parameters<typeof getContract>[0]["chain"],
     address: address as `0x${string}`,
     abi: [
       {
-        "inputs": [
-          {
-            "internalType": "address",
-            "name": "priceFeed",
-            "type": "address"
-          }
+        type: "constructor",
+        inputs: [],
+        stateMutability: "nonpayable",
+      },
+      {
+        type: "receive",
+        stateMutability: "payable",
+      },
+      {
+        type: "fallback",
+        stateMutability: "payable",
+      },
+      {
+        type: "function",
+        name: "contractOwner",
+        inputs: [],
+        outputs: [{ name: "", type: "address" }],
+        stateMutability: "view",
+      },
+      {
+        type: "function",
+        name: "offChainIdToEventId",
+        inputs: [{ name: "", type: "bytes32" }],
+        outputs: [{ name: "", type: "uint256" }],
+        stateMutability: "view",
+      },
+      {
+        type: "function",
+        name: "offChainIdExists",
+        inputs: [{ name: "", type: "bytes32" }],
+        outputs: [{ name: "", type: "bool" }],
+        stateMutability: "view",
+      },
+      {
+        type: "function",
+        name: "supportedTokens",
+        inputs: [{ name: "", type: "address" }],
+        outputs: [
+          { name: "tokenAddress", type: "address" },
+          { name: "priceFeed", type: "address" },
+          { name: "decimals", type: "uint8" },
+          { name: "isSupported", type: "bool" },
         ],
-        "stateMutability": "nonpayable",
-        "type": "constructor"
+        stateMutability: "view",
       },
       {
-        "inputs": [],
-        "name": "Completed",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "ErrorTransferingEther",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "EventClosed",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "HasAlreadyPaid",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "InvalidEventId",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "NoEvents",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "NotAParticipant",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "NotAllowed",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "NotEnoughEther",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "NotEnoughParticipants",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "NotOwner",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "TooMuchEther",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "UnCompleted",
-        "type": "error"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "internalType": "uint256",
-            "name": "_eventId",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "internalType": "bytes32",
-            "name": "_offChainId",
-            "type": "bytes32"
-          },
-          {
-            "indexed": false,
-            "internalType": "address",
-            "name": "_owner",
-            "type": "address"
-          },
-          {
-            "indexed": false,
-            "internalType": "uint256",
-            "name": "_priceUsd",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "internalType": "uint256",
-            "name": "_shareAmount",
-            "type": "uint256"
-          }
+        type: "function",
+        name: "events",
+        inputs: [{ name: "", type: "uint256" }],
+        outputs: [
+          { name: "eventId", type: "uint256" },
+          { name: "offChainId", type: "bytes32" },
+          { name: "owner", type: "address" },
+          { name: "totalAmount", type: "uint256" },
+          { name: "shareAmount", type: "uint256" },
+          { name: "participantsCount", type: "uint256" },
+          { name: "havePaidParticipants", type: "uint256" },
+          { name: "status", type: "uint8" },
         ],
-        "name": "EventCreated",
-        "type": "event"
+        stateMutability: "view",
       },
       {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": false,
-            "internalType": "address",
-            "name": "_address",
-            "type": "address"
-          },
-          {
-            "indexed": false,
-            "internalType": "uint256",
-            "name": "_eventId",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "internalType": "bytes32",
-            "name": "_offChainId",
-            "type": "bytes32"
-          },
-          {
-            "indexed": false,
-            "internalType": "uint256",
-            "name": "_amount",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "internalType": "address",
-            "name": "_owner",
-            "type": "address"
-          }
+        type: "function",
+        name: "createEvent",
+        inputs: [
+          { name: "_offChainId", type: "bytes32" },
+          { name: "_priceUsd", type: "uint256" },
+          { name: "_participants", type: "address[]" },
         ],
-        "name": "Payment",
-        "type": "event"
+        outputs: [],
+        stateMutability: "nonpayable",
       },
       {
-        "inputs": [
-          {
-            "internalType": "bytes32",
-            "name": "_offChainId",
-            "type": "bytes32"
-          }
+        type: "function",
+        name: "paymentInToken",
+        inputs: [
+          { name: "_offChainId", type: "bytes32" },
+          { name: "_tokenAddress", type: "address" },
+          { name: "_amount", type: "uint256" },
         ],
-        "name": "closeEvent",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+        outputs: [],
+        stateMutability: "nonpayable",
       },
       {
-        "inputs": [
-          {
-            "internalType": "bytes32",
-            "name": "_offChainId",
-            "type": "bytes32"
-          }
-        ],
-        "name": "completed",
-        "outputs": [
-          {
-            "internalType": "bool",
-            "name": "",
-            "type": "bool"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        type: "function",
+        name: "paymentInEth",
+        inputs: [{ name: "_offChainId", type: "bytes32" }],
+        outputs: [],
+        stateMutability: "payable",
       },
       {
-        "inputs": [],
-        "name": "contractOwner",
-        "outputs": [
-          {
-            "internalType": "address",
-            "name": "",
-            "type": "address"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        type: "function",
+        name: "logEvents",
+        inputs: [{ name: "_offChainId", type: "bytes32" }],
+        outputs: [{ name: "", type: "uint256" }],
+        stateMutability: "view",
       },
       {
-        "inputs": [
-          {
-            "internalType": "bytes32",
-            "name": "_offChainId",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "uint256",
-            "name": "_priceUsd",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address[]",
-            "name": "_participants",
-            "type": "address[]"
-          }
+        type: "function",
+        name: "setSupportedToken",
+        inputs: [
+          { name: "_tokenAddress", type: "address" },
+          { name: "_priceFeed", type: "address" },
+          { name: "_decimals", type: "uint8" },
+          { name: "_supported", type: "bool" },
         ],
-        "name": "createEvent",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+        outputs: [],
+        stateMutability: "nonpayable",
       },
       {
-        "inputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "name": "events",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "eventId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "offChainId",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "address payable",
-            "name": "owner",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "shareAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "participantsCount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "havePaidParticipants",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum SmartContract.EventStatus",
-            "name": "status",
-            "type": "uint8"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        type: "function",
+        name: "removeSupportedToken",
+        inputs: [{ name: "_tokenAddress", type: "address" }],
+        outputs: [],
+        stateMutability: "nonpayable",
       },
       {
-        "inputs": [
-          {
-            "internalType": "bytes32",
-            "name": "_offChainId",
-            "type": "bytes32"
-          }
-        ],
-        "name": "getEvent",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "eventId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "offChainId",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "address",
-            "name": "eventOwner",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "shareAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "participantsCount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "havePaidParticipants",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum SmartContract.EventStatus",
-            "name": "status",
-            "type": "uint8"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        type: "function",
+        name: "getPrice",
+        inputs: [{ name: "_offChainId", type: "bytes32" }],
+        outputs: [{ name: "", type: "uint256" }],
+        stateMutability: "view",
       },
       {
-        "inputs": [
-          {
-            "internalType": "bytes32",
-            "name": "_offChainId",
-            "type": "bytes32"
-          }
+        type: "function",
+        name: "getSharedPriceInToken",
+        inputs: [
+          { name: "_offChainId", type: "bytes32" },
+          { name: "_tokenAddress", type: "address" },
         ],
-        "name": "getPrice",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        outputs: [{ name: "", type: "uint256" }],
+        stateMutability: "view",
       },
       {
-        "inputs": [
-          {
-            "internalType": "bytes32",
-            "name": "_offChainId",
-            "type": "bytes32"
-          }
-        ],
-        "name": "getSharedPriceInEth",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        type: "function",
+        name: "completed",
+        inputs: [{ name: "_offChainId", type: "bytes32" }],
+        outputs: [{ name: "", type: "bool" }],
+        stateMutability: "view",
       },
       {
-        "inputs": [
-          {
-            "internalType": "bytes32",
-            "name": "_offChainId",
-            "type": "bytes32"
-          }
+        type: "function",
+        name: "getEvent",
+        inputs: [{ name: "_offChainId", type: "bytes32" }],
+        outputs: [
+          { name: "eventId", type: "uint256" },
+          { name: "offChainId", type: "bytes32" },
+          { name: "eventOwner", type: "address" },
+          { name: "totalAmount", type: "uint256" },
+          { name: "shareAmount", type: "uint256" },
+          { name: "participantsCount", type: "uint256" },
+          { name: "havePaidParticipants", type: "uint256" },
+          { name: "status", type: "uint8" },
         ],
-        "name": "logEvents",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        stateMutability: "view",
       },
       {
-        "inputs": [
-          {
-            "internalType": "bytes32",
-            "name": "",
-            "type": "bytes32"
-          }
-        ],
-        "name": "offChainIdExists",
-        "outputs": [
-          {
-            "internalType": "bool",
-            "name": "",
-            "type": "bool"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        type: "function",
+        name: "closeEvent",
+        inputs: [{ name: "_offChainId", type: "bytes32" }],
+        outputs: [],
+        stateMutability: "nonpayable",
       },
       {
-        "inputs": [
-          {
-            "internalType": "bytes32",
-            "name": "",
-            "type": "bytes32"
-          }
+        type: "event",
+        name: "Payment",
+        inputs: [
+          { name: "_address", type: "address", indexed: false },
+          { name: "_eventId", type: "uint256", indexed: false },
+          { name: "_offChainId", type: "bytes32", indexed: false },
+          { name: "_amount", type: "uint256", indexed: false },
+          { name: "_owner", type: "address", indexed: false },
+          { name: "_tokenPaid", type: "address", indexed: false },
         ],
-        "name": "offChainIdToEventId",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        anonymous: false,
       },
       {
-        "inputs": [
-          {
-            "internalType": "bytes32",
-            "name": "_offChainId",
-            "type": "bytes32"
-          }
+        type: "event",
+        name: "EventCreated",
+        inputs: [
+          { name: "_eventId", type: "uint256", indexed: false },
+          { name: "_offChainId", type: "bytes32", indexed: false },
+          { name: "_owner", type: "address", indexed: false },
+          { name: "_priceUsd", type: "uint256", indexed: false },
+          { name: "_shareAmount", type: "uint256", indexed: false },
         ],
-        "name": "payment",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-      }
+        anonymous: false,
+      },
+      { type: "error", name: "NotOwner", inputs: [] },
+      { type: "error", name: "NotEnoughParticipants", inputs: [] },
+      { type: "error", name: "EventClosed", inputs: [] },
+      { type: "error", name: "NotEnoughFunds", inputs: [] },
+      { type: "error", name: "ErrorTransferingEther", inputs: [] },
+      { type: "error", name: "HasAlreadyPaid", inputs: [] },
+      { type: "error", name: "NoEvents", inputs: [] },
+      { type: "error", name: "NotAParticipant", inputs: [] },
+      { type: "error", name: "NotAllowed", inputs: [] },
+      { type: "error", name: "UnCompleted", inputs: [] },
+      { type: "error", name: "Completed", inputs: [] },
+      { type: "error", name: "TooMuchFunds", inputs: [] },
+      { type: "error", name: "InvalidEventId", inputs: [] },
+      { type: "error", name: "UnsupportedDecimals", inputs: [] },
+      { type: "error", name: "TokenNotSupported", inputs: [] },
+      { type: "error", name: "ReentrancyGuardReentrantCall", inputs: [] },
+      {
+        type: "error",
+        name: "SafeERC20FailedOperation",
+        inputs: [{ name: "token", type: "address" }],
+      },
     ],
   });
 }
-
-

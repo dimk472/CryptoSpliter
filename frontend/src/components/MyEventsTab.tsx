@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './styles/MyEventsTab.css';
 import { prepareContractCall, sendTransaction, waitForReceipt, readContract } from "thirdweb";
 import { useActiveWalletChain, useActiveAccount } from "thirdweb/react";
@@ -6,6 +6,8 @@ import { ethereum, sepolia, polygon, arbitrum, optimism, base, avalanche, bsc, l
 import { client } from "../ThirdwebClient";
 import { getEventContract } from "../blokchain/contract";
 import { Building2, Plane, UtensilsCrossed, Car, Zap, Package, Inbox, Search } from 'lucide-react';
+import { TokenIcon } from '@web3icons/react/dynamic';
+import { getContract } from "thirdweb";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -35,6 +37,68 @@ type SplitEvent = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 
+const TOKENS = {
+    ETH: { label: 'ETH', symbol: 'eth' },
+    LINK: { label: 'LINK', symbol: 'link' },
+} as const;
+
+type TokenKey = keyof typeof TOKENS;
+
+function TokenSelect({
+    value,
+    onChange,
+    disabled,
+}: {
+    value: TokenKey;
+    onChange: (v: TokenKey) => void;
+    disabled?: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    return (
+        <div className="me-token-select-wrap" ref={ref}>
+            <button
+                type="button"
+                className="me-token-select-trigger"
+                onClick={() => !disabled && setOpen((o) => !o)}
+                disabled={disabled}
+            >
+                <TokenIcon symbol={TOKENS[value].symbol} size={16} variant="branded" />
+                <span>{TOKENS[value].label}</span>
+                <span className={`me-token-chevron ${open ? 'me-token-chevron--open' : ''}`}>▾</span>
+            </button>
+
+            {open && (
+                <div className="me-token-menu">
+                    {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
+                        <div
+                            key={key}
+                            className={`me-token-option ${key === value ? 'me-token-option--active' : ''}`}
+                            onClick={() => {
+                                onChange(key);
+                                setOpen(false);
+                            }}
+                        >
+                            <TokenIcon symbol={TOKENS[key].symbol} size={16} variant="branded" />
+                            <span>{TOKENS[key].label}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
     Accommodation: <Building2 size={18} />,
@@ -94,7 +158,7 @@ function EventCard({
     onExpand: () => void;
     expanded: boolean;
     walletAddress: string;
-    onPay: (eventId: string) => void;
+    onPay: (eventId: string, token: 'ETH' | 'LINK') => void;
     paying: boolean;
     currencySymbol: string | undefined;
 }) {
@@ -105,6 +169,7 @@ function EventCard({
     const paidCount = debtors.filter(p => p.paid).length;
     const icon = CATEGORY_ICONS[event.category] || '📦';
     const normalizedWallet = walletAddress.toLowerCase();
+    const [selectedToken, setSelectedToken] = useState<'ETH' | 'LINK'>('ETH');
 
     const eventId = event.off_chain_id;
 
@@ -183,13 +248,17 @@ function EventCard({
                                 </span>
 
                                 {!p.paid && p.address.toLowerCase() === normalizedWallet && (
-                                    <button
-                                        className="me-copy-btn"
-                                        onClick={() => onPay(eventId)}
-                                        disabled={paying}
-                                    >
-                                        {paying ? 'Paying...' : 'Pay now'}
-                                    </button>
+                                    <div className="me-pay-row">
+                                        <TokenSelect value={selectedToken} onChange={setSelectedToken} disabled={paying} />
+
+                                        <button
+                                            className="me-copy-btn"
+                                            onClick={() => onPay(eventId, selectedToken)}
+                                            disabled={paying}
+                                        >
+                                            {paying ? 'Paying...' : 'Pay now'}
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         ))}
@@ -210,21 +279,25 @@ function EventCard({
 
 function MyEvents({ walletAddress }: { walletAddress: string }) {
     const [events, setEvents] = useState<SplitEvent[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loadedWalletAddress, setLoadedWalletAddress] = useState('');
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [payingEventId, setPayingEventId] = useState<string | null>(null);
     const [filter, setFilter] = useState<'all' | 'settled' | 'partial' | 'pending'>('all');
 
     const liveAccount = useActiveAccount();
     const activeChain = useActiveWalletChain();
+    const loading = Boolean(walletAddress) && loadedWalletAddress !== walletAddress;
 
     useEffect(() => {
         if (!walletAddress) return;
-        setLoading(true);
 
-        fetch(`${API_URL}/events?wallet=${walletAddress}`)
+        let cancelled = false;
+
+        void fetch(`${API_URL}/events?wallet=${walletAddress}`)
             .then(r => r.json())
             .then(data => {
+                if (cancelled) return;
+
                 if (Array.isArray(data)) {
                     setEvents(data);
                 } else {
@@ -233,10 +306,20 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                 }
             })
             .catch(err => {
+                if (cancelled) return;
+
                 console.error('Fetch error:', err);
                 setEvents([]);
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                if (!cancelled) {
+                    setLoadedWalletAddress(walletAddress);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
     }, [walletAddress]);
 
     // ── Derived stats ──────────────────────────────────────────────────────────
@@ -250,7 +333,7 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
     });
 
     // ── Payment handler ────────────────────────────────────────────────────────
-    const markPaid = async (eventId: string) => {
+    const markPaid = async (eventId: string, token: 'ETH' | 'LINK') => {
         try {
             setPayingEventId(eventId);
 
@@ -269,23 +352,58 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
 
             const offChainIdBytes32 = event.off_chain_id as `0x${string}`;
 
-            const shareAmount = await readContract({
-                contract: getEventContract(paymentChain),
-                method: "getSharedPriceInEth",
-                params: [offChainIdBytes32],
-            });
+            const LINK_ADDRESS = "0x779877A7B0D9E8603169DdbD7836e478b4624789";
+            const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
+            const LINK_PRICE_FEED_ADDRESS = "0xc59E3633BAAC79493d908e63626716e204A45EdF";
+            const ETH_PRICE_FEED_ADDRESS = "0x694AA1769357215DE4FAC081bf1f309aDC325306";
+            let tx;
 
-            const tx = prepareContractCall({
-                contract: getEventContract(paymentChain),
-                method: "payment",
-                params: [offChainIdBytes32],
-                value: shareAmount as bigint,
-            });
+            if (token === 'LINK') {
+                const shareAmountToken = await readContract({
+                    contract: getEventContract(paymentChain),
+                    method: "getSharedPriceInToken",
+                    params: [offChainIdBytes32, LINK_ADDRESS],
+                });
+                const linkContract = getContract({
+                    client,
+                    chain: paymentChain,
+                    address: LINK_ADDRESS,
+                });
+
+                const approveTx = prepareContractCall({
+                    contract: linkContract,
+                    method: "function approve(address spender, uint256 amount) returns (bool)",
+                    params: [getEventContract(paymentChain).address, shareAmountToken],
+                });
+
+                const approveRes = await sendTransaction({ transaction: approveTx, account: liveAccount });
+                await waitForReceipt({ client, chain: paymentChain, transactionHash: approveRes.transactionHash });
+
+                tx = prepareContractCall({
+                    contract: getEventContract(paymentChain),
+                    method: "paymentInToken",
+                    params: [offChainIdBytes32, LINK_ADDRESS, shareAmountToken],
+                });
+            } else {
+                const shareAmount = await readContract({
+                    contract: getEventContract(paymentChain),
+                    method: "getSharedPriceInToken",
+                    params: [offChainIdBytes32, ETH_ADDRESS],
+                });
+
+                tx = prepareContractCall({
+                    contract: getEventContract(paymentChain),
+                    method: "paymentInEth",
+                    params: [offChainIdBytes32],
+                    value: shareAmount,
+                });
+            }
 
             const res = await sendTransaction({
                 transaction: tx,
                 account: liveAccount,
             });
+
 
             await waitForReceipt({
                 client,

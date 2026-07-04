@@ -1,0 +1,95 @@
+/* DonateSection.css - Matching legal-shared.css */
+
+.donate-paypal-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #0ea5e9;
+  color: white;
+  padding: 16px 28px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 32px 0 40px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.25);
+  width: fit-content;
+}
+
+.donate-paypal-btn:hover {
+  background: #0284c8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(14, 165, 233, 0.35);
+}
+
+.donate-crypto-label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0ea5e9;
+  margin: 8px 0 20px;
+}
+
+.donate-crypto-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.donate-crypto-row {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: all 0.2s ease;
+}
+
+.donate-crypto-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(14, 165, 233, 0.2);
+  transform: translateX(4px);
+}
+
+.donate-crypto-symbol {
+  font-weight: 700;
+  font-size: 1.15rem;
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.donate-crypto-address {
+  flex: 1;
+  font-family: ui-monospace, monospace;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  word-break: break-all;
+}
+
+.donate-copy-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.donate-copy-btn:hover {
+  background: rgba(14, 165, 233, 0.15);
+  border-color: #0ea5e9;
+  color: white;
+}
+
+.donate-copy-btn:active {
+  transform: scale(0.97);
+}

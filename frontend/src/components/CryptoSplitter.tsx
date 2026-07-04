@@ -15,6 +15,7 @@ import { createWallet } from "thirdweb/wallets";
 import React, { useState, useEffect } from 'react';
 import TermsOfUse from './TermsOfUse.tsx';
 import PrivacyPolicy from './PrivacyPolicy.tsx';
+import DonateSection from "./DonateSection.tsx";
 import { shortenAddress } from "thirdweb/utils";
 import { ethers } from "ethers";
 import logo from '../assets/logo.png';
@@ -629,7 +630,7 @@ function CryptoSpliter() {
     const account = useActiveAccount();
     const [stableWalletAddress, setStableWalletAddress] = useState('');
     const [showLoading, setShowLoading] = useState(true);
-    const [activeLegalPage, setActiveLegalPage] = useState<'privacy' | 'terms' | null>(null);
+    const [activeLegalPage, setActiveLegalPage] = useState<'privacy' | 'terms' | 'donate' | null>(null);
 
     useEffect(() => {
         if (account?.address) {
@@ -656,6 +657,11 @@ function CryptoSpliter() {
         setActiveLegalPage('terms');
     };
 
+    const openDonateSection = (event: React.MouseEvent<HTMLAnchorElement>) => {
+        event.preventDefault();
+        setActiveLegalPage('donate');
+    };
+
     if (activeLegalPage === 'privacy') {
         return (
             <PrivacyPolicy />
@@ -667,6 +673,13 @@ function CryptoSpliter() {
             <TermsOfUse />
         );
     }
+
+    if (activeLegalPage === 'donate') {
+        return (
+            <DonateSection />
+        );
+    }
+
     function WalletDetails() {
         const account = useActiveAccount();
         const activeChain = useActiveWalletChain();
@@ -842,7 +855,7 @@ function CryptoSpliter() {
                         <div className="footer-main">
                             <div className="footer-col footer-col--brand">
                                 <a href="#home" className="footer-logo">
-                                    <img src="../src/assets/logo.png" alt="CryptoSpliter" loading="lazy" />
+                                    <img src={logo} alt="CryptoSpliter Logo" />
                                 </a>
                                 <p className="footer-description">
                                     Split crypto expenses with your crew — zero fees, on-chain, instant.
@@ -859,6 +872,17 @@ function CryptoSpliter() {
                                         <i className="fab fa-linkedin-in"></i>
                                     </a>
                                 </div>
+                            </div>
+
+                            {/* Improved Minimal Donate Button */}
+                            <div className="footer-donate-wrapper">
+                                <a
+                                    onClick={openDonateSection}
+                                    className="footer-donate-btn"
+                                    aria-label="Support us"
+                                >
+                                    Donate
+                                </a>
                             </div>
 
                             <div className="footer-col">

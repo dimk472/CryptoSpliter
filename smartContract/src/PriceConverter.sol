@@ -6,34 +6,50 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interf
 // Why is this a library and not abstract?
 // Why not an interface?
 library PriceConverter {
-    // We could make this public, but then we'd have to deploy it
+    using PriceConverter for uint256;
+
+    // =========================
+    // GET PRICE (token/USD)
+    // =========================
     function getPrice(
         AggregatorV3Interface priceFeed
     ) internal view returns (uint256) {
-        // Sepolia ETH / USD Address
-        // https://docs.chain.link/data-feeds/price-feeds/addresses
         (, int256 answer, , , ) = priceFeed.latestRoundData();
-        // ETH/USD rate in 18 digit
-        return uint256(answer * 1e10);
+        require(answer > 0, "Invalid price");
+        // Chainlink feeds are usually 8 decimals → convert to 18
+        return uint256(answer) * 1e10;
     }
 
-    // 1000000000
-    function getConversionRate(
-        uint256 ethAmount,
+    // =========================
+    // TOKEN → USD
+    // =========================
+    function getTokenUsdValue(
+        uint256 tokenAmount,
+        uint8 tokenDecimals,
         AggregatorV3Interface priceFeed
     ) internal view returns (uint256) {
-        uint256 ethPrice = getPrice(priceFeed);
-        uint256 ethAmountInUsd = (ethPrice * ethAmount) / 1e18;
-        // the actual ETH/USD conversion rate, after adjusting the extra 0s.
-        return ethAmountInUsd;
+        uint256 price = getPrice(priceFeed); // USD per token (18 decimals)
+
+        // normalize token to 18 decimals
+        uint256 normalized = tokenAmount * (10 ** (18 - tokenDecimals));
+
+        // USD value in 18 decimals
+        return (normalized * price) / 1e18;
     }
 
-    function getEthAmountFromUsd(
+    // =========================
+    // USD → TOKEN
+    // =========================
+    function getTokenAmountFromUsd(
         uint256 usdAmount,
+        uint8 tokenDecimals,
         AggregatorV3Interface priceFeed
     ) internal view returns (uint256) {
-        uint256 ethPrice = getPrice(priceFeed); // USD/ETH με 18 decimals
-        uint256 ethAmount = (usdAmount * 1e18) / ethPrice;
-        return ethAmount; // σε Wei
+        uint256 price = getPrice(priceFeed);
+
+        uint256 tokenAmount = (usdAmount * 1e18) / price;
+
+        // de-normalize back to token decimals
+        return tokenAmount / (10 ** (18 - tokenDecimals));
     }
 }
