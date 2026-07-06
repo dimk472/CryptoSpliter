@@ -15,6 +15,11 @@ import { getContract } from "thirdweb";
 type EventParticipant = {
     name: string;
     address: string;
+    // The amount this participant actually owes, as stored in the backend's
+    // `debts` table. Populated from a custom (possibly uneven) split created
+    // in Step 3 of the event creation flow. Falls back to an equal share of
+    // `total_amount` when absent, e.g. for events created before custom
+    // splits existed.
     amount?: number;
     paid: boolean;
     is_owner?: boolean;
@@ -143,6 +148,18 @@ function getStatus(event: SplitEvent) {
     return 'pending';
 }
 
+// Returns the amount a specific participant owes. Prefers the real value
+// stored in the backend's `debts` table (participant.amount, from a custom
+// split). Falls back to an equal share of the event total for older events
+// that don't have per-participant amounts recorded yet.
+function getParticipantAmount(event: SplitEvent, participant: EventParticipant): number {
+    if (typeof participant.amount === 'number' && !Number.isNaN(participant.amount)) {
+        return participant.amount;
+    }
+    const total = parseFloat(event.total_amount) || 0;
+    return event.participants.length > 0 ? total / event.participants.length : 0;
+}
+
 // ─── EventCard ────────────────────────────────────────────────────────────────
 
 function EventCard({
@@ -164,7 +181,15 @@ function EventCard({
 }) {
     const amt = parseFloat(event.total_amount) || 0;
     const debtors = event.participants.filter(p => !p.is_owner);
-    const perPerson = event.participants.length > 0 ? (amt / event.participants.length).toFixed(2) : '0.00';
+    const perPersonEqual = event.participants.length > 0 ? amt / event.participants.length : 0;
+
+    // If any participant's real debt (from the debts table) differs from an
+    // equal share, this event has a custom split — used purely to label the
+    // summary line correctly ("avg" vs a flat per-person amount).
+    const isCustomSplit = event.participants.some(
+        p => Math.abs(getParticipantAmount(event, p) - perPersonEqual) > 0.01
+    );
+
     const status = getStatus(event);
     const paidCount = debtors.filter(p => p.paid).length;
     const icon = CATEGORY_ICONS[event.category] || '📦';
@@ -192,7 +217,9 @@ function EventCard({
                 <div className="me-card-right">
                     <div className="me-amount-col">
                         <span className="me-amount">{amt} {event.currency}</span>
-                        <span className="me-per">{perPerson} {event.currency} / person</span>
+                        <span className="me-per">
+                            {isCustomSplit ? 'avg ' : ''}{perPersonEqual.toFixed(2)} {event.currency} / person
+                        </span>
                     </div>
                     <span className={`me-badge me-badge--${status}`}>
                         {status === 'settled' ? '✓ Settled' : status === 'partial' ? '◑ Partial' : '○ Pending'}
@@ -223,45 +250,49 @@ function EventCard({
                     </div>
 
                     <div className="me-participants">
-                        {event.participants.map((p, i) => (
-                            <div key={i} className="me-participant-row">
-                                <div
-                                    className="me-p-avatar"
-                                    style={{ background: i % 4 === 0 ? '#0ea5e9' : '#0369a1' }}
-                                >
-                                    {p.name ? p.name[0].toUpperCase() : '?'}
-                                </div>
+                        {event.participants.map((p, i) => {
+                            const participantAmount = getParticipantAmount(event, p);
 
-                                <div className="me-p-info">
-                                    <span className="me-p-name">
-                                        {p.name}{p.is_owner ? ' (owner)' : ''}
-                                    </span>
-                                    <span className="me-p-addr">{shortenAddr(p.address)}</span>
-                                </div>
-
-                                <span className="me-p-amt">
-                                    {perPerson} {currencySymbol}
-                                </span>
-
-                                <span className={`me-p-status ${p.paid ? 'me-p-status--paid' : 'me-p-status--pending'}`}>
-                                    {p.paid ? '✓ Paid' : 'Pending'}
-                                </span>
-
-                                {!p.paid && p.address.toLowerCase() === normalizedWallet && (
-                                    <div className="me-pay-row">
-                                        <TokenSelect value={selectedToken} onChange={setSelectedToken} disabled={paying} />
-
-                                        <button
-                                            className="me-copy-btn"
-                                            onClick={() => onPay(eventId, selectedToken)}
-                                            disabled={paying}
-                                        >
-                                            {paying ? 'Paying...' : 'Pay now'}
-                                        </button>
+                            return (
+                                <div key={i} className="me-participant-row">
+                                    <div
+                                        className="me-p-avatar"
+                                        style={{ background: i % 4 === 0 ? '#0ea5e9' : '#0369a1' }}
+                                    >
+                                        {p.name ? p.name[0].toUpperCase() : '?'}
                                     </div>
-                                )}
-                            </div>
-                        ))}
+
+                                    <div className="me-p-info">
+                                        <span className="me-p-name">
+                                            {p.name}{p.is_owner ? ' (owner)' : ''}
+                                        </span>
+                                        <span className="me-p-addr">{shortenAddr(p.address)}</span>
+                                    </div>
+
+                                    <span className="me-p-amt">
+                                        {participantAmount.toFixed(2)} {currencySymbol}
+                                    </span>
+
+                                    <span className={`me-p-status ${p.paid ? 'me-p-status--paid' : 'me-p-status--pending'}`}>
+                                        {p.paid ? '✓ Paid' : 'Pending'}
+                                    </span>
+
+                                    {!p.paid && p.address.toLowerCase() === normalizedWallet && (
+                                        <div className="me-pay-row">
+                                            <TokenSelect value={selectedToken} onChange={setSelectedToken} disabled={paying} />
+
+                                            <button
+                                                className="me-copy-btn"
+                                                onClick={() => onPay(eventId, selectedToken)}
+                                                disabled={paying}
+                                            >
+                                                {paying ? 'Paying...' : 'Pay now'}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <div className="me-footer-info">
@@ -351,18 +382,19 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
             }
 
             const offChainIdBytes32 = event.off_chain_id as `0x${string}`;
+            const payerAddress = walletAddress as `0x${string}`;
 
             const LINK_ADDRESS = "0x779877A7B0D9E8603169DdbD7836e478b4624789";
             const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
-            const LINK_PRICE_FEED_ADDRESS = "0xc59E3633BAAC79493d908e63626716e204A45EdF";
-            const ETH_PRICE_FEED_ADDRESS = "0x694AA1769357215DE4FAC081bf1f309aDC325306";
             let tx;
 
             if (token === 'LINK') {
+                // getSharedPriceInToken now requires the participant address, since
+                // each participant can owe a different (custom-split) share.
                 const shareAmountToken = await readContract({
                     contract: getEventContract(paymentChain),
                     method: "getSharedPriceInToken",
-                    params: [offChainIdBytes32, LINK_ADDRESS],
+                    params: [offChainIdBytes32, payerAddress, LINK_ADDRESS],
                 });
                 const linkContract = getContract({
                     client,
@@ -388,7 +420,7 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                 const shareAmount = await readContract({
                     contract: getEventContract(paymentChain),
                     method: "getSharedPriceInToken",
-                    params: [offChainIdBytes32, ETH_ADDRESS],
+                    params: [offChainIdBytes32, payerAddress, ETH_ADDRESS],
                 });
 
                 tx = prepareContractCall({
@@ -443,9 +475,13 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                 )
             );
 
-        } catch (err) {
-            console.error("❌ Payment error:", err);
-            alert(err instanceof Error ? err.message : 'Payment failed');
+        } catch (err: any) {
+            // 1. Logs the expandable, inspectable object to the console
+            console.error("❌ Deep Payment Error Details:", err);
+
+            // 2. Extracts inner contract revert messages if they exist
+            const dynamicMessage = err?.message || err?.reason || "Unknown payment error";
+            alert(`Payment failed: ${dynamicMessage}`);
         } finally {
             setPayingEventId(null);
         }

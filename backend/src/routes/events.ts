@@ -6,6 +6,11 @@ const router = Router();
 type ParticipantInput = {
   address?: unknown;
   name?: unknown;
+  amount?: unknown; // ✅ Προσθήκη του amount στον τύπο εισόδου
+};
+
+type SplitInput = ParticipantInput & {
+  id?: unknown;
 };
 
 router.get("/", async (req, res) => {
@@ -162,45 +167,58 @@ router.post("/", async (req, res) => {
       chain_id,
       currency,
       participants = [],
+      splits = [],
     } = req.body;
 
     const normalizedCreatorWallet = String(creator_wallet).toLowerCase();
+    const splitInputs = Array.isArray(splits) ? (splits as SplitInput[]) : [];
     const participantInputs = Array.isArray(participants)
       ? (participants as ParticipantInput[])
       : [];
+    const sourceInputs =
+      splitInputs.length > 0 ? splitInputs : participantInputs;
 
     if (!title || !total_amount || !normalizedCreatorWallet) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
-    if (participantInputs.length === 0) {
+    if (sourceInputs.length === 0) {
       return res.status(400).json({ error: "Invalid participants" });
     }
 
-    const debtorWallets = Array.from(
-      new Set(
-        participantInputs
-          .map((participant) => ({
-            address: String(participant?.address ?? "")
-              .trim()
-              .toLowerCase(),
-            name: String(participant?.name ?? "").trim(),
-          }))
-          .filter(
-            (item: { address: string; name: string }) =>
-              item.address.startsWith("0x") &&
-              item.address !== normalizedCreatorWallet,
-          ),
-      ),
+    const mappedParticipants = sourceInputs
+      .map((p) => ({
+        address: String(p?.address ?? "")
+          .trim()
+          .toLowerCase(),
+        name: String(p?.name ?? "").trim(),
+        amount: Number(p?.amount ?? 0),
+      }))
+      .filter((item) => item.address.startsWith("0x"));
+
+    // ✅ Σωστό De-duplication με βάση το address
+    const uniqueParticipants = mappedParticipants.filter(
+      (item, index, self) =>
+        self.findIndex((p) => p.address === item.address) === index,
     );
 
-    const ownerParticipant = participantInputs.find(
-      (participant) =>
-        String(participant?.address ?? "")
-          .trim()
-          .toLowerCase() === normalizedCreatorWallet,
+    const expectedTotal = Number(total_amount);
+    const splitTotal = uniqueParticipants.reduce(
+      (sum, participant) => sum + participant.amount,
+      0,
     );
-    const ownerName = String(ownerParticipant?.name ?? "").trim() || "Owner";
+
+    if (
+      !Number.isFinite(expectedTotal) ||
+      expectedTotal <= 0 ||
+      uniqueParticipants.some((participant) => participant.amount < 0) ||
+      Math.abs(splitTotal - expectedTotal) > 0.01
+    ) {
+      return res.status(400).json({
+        error: "Invalid participant split amounts",
+        details: `Expected total ${expectedTotal}, received ${splitTotal}`,
+      });
+    }
 
     const { data: event, error: eventError } = await supabase
       .from("events")
@@ -226,30 +244,22 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const each =
-      debtorWallets.length > 0
-        ? Number(total_amount) / debtorWallets.length
-        : 0;
-
-    const debts = debtorWallets.map((debtor) => ({
+    const finalDebts = uniqueParticipants.map((participant) => ({
       event_id: event.id,
-      debtor_wallet: debtor.address,
+      debtor_wallet: participant.address,
       creditor_wallet: normalizedCreatorWallet,
-      name: debtor.name || `Participant`,
-      amount: each,
-      paid: false,
+      name:
+        participant.name ||
+        (participant.address === normalizedCreatorWallet
+          ? "Owner"
+          : "Participant"),
+      amount: participant.amount,
+      paid: participant.address === normalizedCreatorWallet,
     }));
 
-    debts.push({
-      event_id: event.id,
-      debtor_wallet: normalizedCreatorWallet,
-      creditor_wallet: normalizedCreatorWallet,
-      name: ownerName, // ✅ Διορθωμένο
-      amount: Number(total_amount),
-      paid: true,
-    });
-
-    const { error: debtsError } = await supabase.from("debts").insert(debts);
+    const { error: debtsError } = await supabase
+      .from("debts")
+      .insert(finalDebts);
 
     if (debtsError) {
       console.error("DEBTS ERROR:", debtsError);
@@ -262,11 +272,10 @@ router.post("/", async (req, res) => {
     return res.json({
       success: true,
       event,
-      debts,
+      debts: finalDebts,
     });
   } catch (err) {
     console.error("FATAL ERROR:", err);
-
     return res.status(500).json({
       error: "Server crashed",
       details: err instanceof Error ? err.message : "Unknown error",

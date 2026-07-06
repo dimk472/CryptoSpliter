@@ -28,6 +28,10 @@ contract SmartContract is ReentrancyGuard {
     error InvalidEventId();
     error UnsupportedDecimals();
     error TokenNotSupported();
+    error OwnerNotParticipant();
+    error DuplicateParticipant();
+    error InvalidParticipant();
+    error InvalidShare();
 
     address public contractOwner;
 
@@ -49,8 +53,7 @@ contract SmartContract is ReentrancyGuard {
         uint _eventId,
         bytes32 _offChainId,
         address _owner,
-        uint _priceUsd,
-        uint _shareAmount
+        uint _priceUsd
     );
 
     struct Event {
@@ -58,10 +61,10 @@ contract SmartContract is ReentrancyGuard {
         bytes32 offChainId;
         address payable owner;
         uint256 totalAmount;
-        uint256 shareAmount;
         uint256 participantsCount;
         uint256 havePaidParticipants;
         EventStatus status;
+        mapping(address => uint256) shares;
         mapping(address => bool) isParticipant;
         mapping(address => bool) hasPaid;
     }
@@ -103,44 +106,66 @@ contract SmartContract is ReentrancyGuard {
     function createEvent(
         bytes32 _offChainId,
         uint256 _priceUsd,
-        address[] memory _participants
+        address[] memory _participants,
+        uint256[] memory _shares
     ) public {
         if (_participants.length == 0) revert NotEnoughParticipants();
         if (offChainIdExists[_offChainId]) revert InvalidEventId();
         if (_priceUsd == 0) revert NotEnoughFunds();
+        if (_participants.length != _shares.length)
+            revert NotEnoughParticipants();
+
+        bool ownerFound = false;
+        uint256 totalShares = 0;
+
+        uint256 length = _participants.length;
+
+        for (uint256 i = 0; i < length; i++) {
+            // Invalid address
+            if (_participants[i] == address(0)) revert InvalidParticipant();
+
+            // Share cannot be zero
+            if (_shares[i] == 0) revert InvalidShare();
+
+            // Check if creator is participant
+            if (_participants[i] == msg.sender) ownerFound = true;
+
+            totalShares += _shares[i];
+
+            // Check duplicate participants
+            for (uint256 j = i + 1; j < length; j++) {
+                if (_participants[i] == _participants[j])
+                    revert DuplicateParticipant();
+            }
+        }
+
+        if (!ownerFound) revert OwnerNotParticipant();
+
+        if (totalShares != _priceUsd) revert NotEnoughFunds();
 
         events.push();
         uint256 eventId = events.length - 1;
         Event storage e = events[eventId];
 
-        uint256 totalParticipants = _participants.length + 1;
-
-        e.owner = payable(msg.sender);
         e.eventId = eventId;
         e.offChainId = _offChainId;
+        e.owner = payable(msg.sender);
         e.totalAmount = _priceUsd;
-        e.shareAmount = _priceUsd / totalParticipants;
-        e.status = EventStatus.Opened;
-        e.participantsCount = totalParticipants;
+        e.participantsCount = _participants.length;
         e.havePaidParticipants = 1;
+        e.status = EventStatus.Opened;
 
-        e.isParticipant[msg.sender] = true;
         e.hasPaid[msg.sender] = true;
 
         offChainIdToEventId[_offChainId] = eventId;
         offChainIdExists[_offChainId] = true;
 
-        for (uint256 i = 0; i < _participants.length; i++) {
+        for (uint256 i = 0; i < length; i++) {
             e.isParticipant[_participants[i]] = true;
+            e.shares[_participants[i]] = _shares[i];
         }
 
-        emit EventCreated(
-            eventId,
-            e.offChainId,
-            e.owner,
-            e.totalAmount,
-            e.shareAmount
-        );
+        emit EventCreated(eventId, e.offChainId, e.owner, e.totalAmount);
     }
 
     // -------------------------
@@ -159,7 +184,7 @@ contract SmartContract is ReentrancyGuard {
         if (!e.isParticipant[msg.sender]) revert NotAParticipant();
         if (e.hasPaid[msg.sender]) revert HasAlreadyPaid();
 
-        uint256 share = e.shareAmount;
+        uint256 share = e.shares[msg.sender];
         uint256 tolerance = (share * TOLERANCE_BPS) / 10000;
         uint256 amountInUsd;
 
@@ -211,7 +236,7 @@ contract SmartContract is ReentrancyGuard {
             tokenInfo.priceFeed
         );
 
-        uint256 share = e.shareAmount;
+        uint256 share = e.shares[msg.sender];
         uint256 tolerance = (share * TOLERANCE_BPS) / 10000;
         if (amountInUsd < share - tolerance) revert NotEnoughFunds();
         if (amountInUsd > share + tolerance) revert TooMuchFunds();
@@ -257,17 +282,22 @@ contract SmartContract is ReentrancyGuard {
         delete supportedTokens[_tokenAddress];
     }
 
-    function getPrice(bytes32 _offChainId) public view returns (uint256) {
-        return events[_getEventId(_offChainId)].shareAmount;
+    function getPrice(
+        bytes32 _offChainId,
+        address _participant
+    ) public view returns (uint256) {
+        return events[_getEventId(_offChainId)].shares[_participant];
     }
 
     function getSharedPriceInToken(
         bytes32 _offChainId,
+        address _participant,
         address _tokenAddress
     ) public view returns (uint256) {
         SupportedToken storage info = supportedTokens[_tokenAddress];
+        if (!info.isSupported) revert TokenNotSupported();
 
-        uint256 share = events[_getEventId(_offChainId)].shareAmount;
+        uint256 share = events[_getEventId(_offChainId)].shares[_participant];
 
         return share.getTokenAmountFromUsd(info.decimals, info.priceFeed);
     }
@@ -287,7 +317,6 @@ contract SmartContract is ReentrancyGuard {
             bytes32 offChainId,
             address eventOwner,
             uint256 totalAmount,
-            uint256 shareAmount,
             uint256 participantsCount,
             uint256 havePaidParticipants,
             EventStatus status
@@ -299,15 +328,19 @@ contract SmartContract is ReentrancyGuard {
             e.offChainId,
             e.owner,
             e.totalAmount,
-            e.shareAmount,
             e.participantsCount,
             e.havePaidParticipants,
             e.status
         );
     }
 
-    function closeEvent(bytes32 _offChainId) public onlyOwner {
-        events[_getEventId(_offChainId)].status = EventStatus.Closed;
+    function closeEvent(bytes32 _offChainId) public {
+        Event storage e = events[_getEventId(_offChainId)];
+        if (e.status == EventStatus.Closed) revert EventClosed();
+
+        if (msg.sender != e.owner) revert NotOwner();
+
+        e.status = EventStatus.Closed;
     }
 
     receive() external payable {

@@ -8,9 +8,6 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interf
 // ─────────────────────────────────────────────
 // Mock Chainlink Price Feed
 // ETH/USD = $3000 (8 decimals → 300000000000)
-// Υλοποιεί πλήρως το AggregatorV3Interface ώστε να
-// μπορεί να περαστεί απευθείας όπου ζητείται
-// AggregatorV3Interface (χωρίς implicit conversion error).
 // ─────────────────────────────────────────────
 contract MockV3Aggregator is AggregatorV3Interface {
     int256 public answer;
@@ -98,10 +95,9 @@ contract MockERC20 {
 }
 
 // ─────────────────────────────────────────────
-// Contract με receive/fallback ώστε να μπορεί να
-// γίνει owner ενός event, αλλά ΔΕΝ δέχεται ETH.
-// Χρησιμοποιείται για να καλυφθεί το branch
-// ErrorTransferingEther στο paymentInEth().
+// A contract that can own an event but rejects
+// plain ETH transfers, used to cover the
+// ErrorTransferingEther branch in paymentInEth().
 // ─────────────────────────────────────────────
 contract RejectingReceiver {
     SmartContract public target;
@@ -113,13 +109,14 @@ contract RejectingReceiver {
     function createEvent(
         bytes32 offChainId,
         uint256 priceUsd,
-        address[] memory participants
+        address[] memory participants,
+        uint256[] memory shares
     ) external {
-        target.createEvent(offChainId, priceUsd, participants);
+        target.createEvent(offChainId, priceUsd, participants, shares);
     }
 
-    // Σκόπιμα ΔΕΝ υπάρχει receive() ή fallback() payable
-    // ώστε κάθε call{value: ...} προς αυτό το contract να αποτυγχάνει.
+    // Intentionally no receive() / payable fallback() so any
+    // call{value: ...} sent to this contract fails.
 }
 
 contract SmartContractTest is Test {
@@ -134,9 +131,9 @@ contract SmartContractTest is Test {
     // Token price = $15, 8 decimals
     int256 constant TOKEN_PRICE = 1500000000;
 
-    // $30 total, 3 participants → $10/each
-    uint256 constant PRICE_USD = 30e18;
-    uint256 constant SHARE_USD = 10e18; // 30e18 / 3
+    // 3 participants (owner + 2), $10 each => $30 total
+    uint256 constant SHARE_USD = 10e18;
+    uint256 constant PRICE_USD = 30e18; // 3 * SHARE_USD
     uint256 constant SHARE_WEI = 3333333333333333; // ~$10 at $3000/ETH
 
     receive() external payable {}
@@ -146,7 +143,6 @@ contract SmartContractTest is Test {
         mockTokenPriceFeed = new MockV3Aggregator(TOKEN_PRICE);
         mockToken = new MockERC20();
 
-        // Ο constructor του SmartContract δεν δέχεται arguments
         smartContract = new SmartContract();
 
         vm.deal(address(this), 100 ether);
@@ -161,18 +157,36 @@ contract SmartContractTest is Test {
     // ─────────────────────────────────────────────
     // HELPERS
     // ─────────────────────────────────────────────
+    function _participantsAndShares()
+        internal
+        view
+        returns (address[] memory participants, uint256[] memory shares)
+    {
+        participants = new address[](3);
+        participants[0] = address(this); // owner must be a participant
+        participants[1] = address(0x123);
+        participants[2] = address(0x456);
+
+        shares = new uint256[](3);
+        shares[0] = SHARE_USD;
+        shares[1] = SHARE_USD;
+        shares[2] = SHARE_USD;
+    }
+
     function _createEvent() internal {
-        address[] memory participants = new address[](2);
-        participants[0] = address(0x123);
-        participants[1] = address(0x456);
-        smartContract.createEvent("abc", PRICE_USD, participants);
+        (
+            address[] memory participants,
+            uint256[] memory shares
+        ) = _participantsAndShares();
+        smartContract.createEvent("abc", PRICE_USD, participants, shares);
     }
 
     function _createEvent2() internal {
-        address[] memory participants = new address[](2);
-        participants[0] = address(0x123);
-        participants[1] = address(0x456);
-        smartContract.createEvent("def", PRICE_USD, participants);
+        (
+            address[] memory participants,
+            uint256[] memory shares
+        ) = _participantsAndShares();
+        smartContract.createEvent("def", PRICE_USD, participants, shares);
     }
 
     function _supportMockToken() internal {
@@ -208,7 +222,6 @@ contract SmartContractTest is Test {
             bytes32 offChainId,
             address eventOwner,
             uint256 totalAmount,
-            uint256 shareAmount,
             uint256 participantsCount,
             uint256 havePaidParticipants,
             SmartContract.EventStatus status
@@ -218,7 +231,6 @@ contract SmartContractTest is Test {
         assertEq(offChainId, "abc");
         assertEq(eventOwner, address(this));
         assertEq(totalAmount, PRICE_USD);
-        assertEq(shareAmount, SHARE_USD);
         assertEq(participantsCount, 3);
         assertEq(havePaidParticipants, 1); // owner pre-paid
         assertEq(uint(status), uint(SmartContract.EventStatus.Opened));
@@ -226,7 +238,7 @@ contract SmartContractTest is Test {
 
     function testCreateEventOwnerIsPrePaid() public {
         _createEvent();
-        (, , , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
+        (, , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
             "abc"
         );
         assertEq(havePaidParticipants, 1);
@@ -241,13 +253,16 @@ contract SmartContractTest is Test {
 
     function testCreateEventWithNoParticipants() public {
         address[] memory participants = new address[](0);
+        uint256[] memory shares = new uint256[](0);
         vm.expectRevert(SmartContract.NotEnoughParticipants.selector);
-        smartContract.createEvent("abc", PRICE_USD, participants);
+        smartContract.createEvent("abc", PRICE_USD, participants, shares);
     }
 
-    function testCreateEventShareAmountCalculation() public {
+    function testCreateEventShareAmountStoredPerParticipant() public {
         _createEvent();
-        assertEq(smartContract.getPrice("abc"), SHARE_USD);
+        assertEq(smartContract.getPrice("abc", address(this)), SHARE_USD);
+        assertEq(smartContract.getPrice("abc", address(0x123)), SHARE_USD);
+        assertEq(smartContract.getPrice("abc", address(0x456)), SHARE_USD);
     }
 
     function testCreateEventOffChainIdMappingSet() public {
@@ -258,56 +273,129 @@ contract SmartContractTest is Test {
 
     function testCreateEventWithZeroPrice() public {
         address[] memory participants = new address[](1);
-        participants[0] = address(0x123);
+        participants[0] = address(this);
+        uint256[] memory shares = new uint256[](1);
+        shares[0] = 1;
         vm.expectRevert(SmartContract.NotEnoughFunds.selector);
-        smartContract.createEvent("abc", 0, participants);
+        smartContract.createEvent("abc", 0, participants, shares);
     }
 
-    // Το contract κάνει revert σε duplicate offChainId αντί να το αντικαταστήσει.
+    function testCreateEventWithMismatchedArrayLengths() public {
+        address[] memory participants = new address[](2);
+        participants[0] = address(this);
+        participants[1] = address(0x123);
+        uint256[] memory shares = new uint256[](1);
+        shares[0] = PRICE_USD;
+
+        vm.expectRevert(SmartContract.NotEnoughParticipants.selector);
+        smartContract.createEvent("abc", PRICE_USD, participants, shares);
+    }
+
     function testCreateEventWithDuplicateOffChainIdReverts() public {
         _createEvent();
         address[] memory participants = new address[](1);
-        participants[0] = address(0x123);
+        participants[0] = address(this);
+        uint256[] memory shares = new uint256[](1);
+        shares[0] = PRICE_USD;
 
         vm.expectRevert(SmartContract.InvalidEventId.selector);
-        smartContract.createEvent("abc", PRICE_USD, participants);
+        smartContract.createEvent("abc", PRICE_USD, participants, shares);
     }
 
     function testCreateEventWithSingleParticipant() public {
         address[] memory participants = new address[](1);
-        participants[0] = address(0x123);
-        smartContract.createEvent("single", 20e18, participants);
+        participants[0] = address(this);
+        uint256[] memory shares = new uint256[](1);
+        shares[0] = 20e18;
+
+        smartContract.createEvent("single", 20e18, participants, shares);
 
         (
             ,
             ,
             ,
             uint256 totalAmount,
-            uint256 shareAmount,
             uint256 participantsCount,
             ,
 
         ) = smartContract.getEvent("single");
 
         assertEq(totalAmount, 20e18);
-        assertEq(shareAmount, 10e18); // 20e18 / 2
-        assertEq(participantsCount, 2);
+        assertEq(participantsCount, 1);
+        assertEq(smartContract.getPrice("single", address(this)), 20e18);
     }
 
-    function testCreateEventEmitsEvent() public {
+    function testCreateEventWithZeroAddressParticipantReverts() public {
+        address[] memory participants = new address[](2);
+        participants[0] = address(this);
+        participants[1] = address(0);
+        uint256[] memory shares = new uint256[](2);
+        shares[0] = 15e18;
+        shares[1] = 15e18;
+
+        vm.expectRevert(SmartContract.InvalidParticipant.selector);
+        smartContract.createEvent("abc", PRICE_USD, participants, shares);
+    }
+
+    function testCreateEventWithZeroShareReverts() public {
+        address[] memory participants = new address[](2);
+        participants[0] = address(this);
+        participants[1] = address(0x123);
+        uint256[] memory shares = new uint256[](2);
+        shares[0] = PRICE_USD;
+        shares[1] = 0;
+
+        vm.expectRevert(SmartContract.InvalidShare.selector);
+        smartContract.createEvent("abc", PRICE_USD, participants, shares);
+    }
+
+    function testCreateEventWithoutOwnerAsParticipantReverts() public {
         address[] memory participants = new address[](2);
         participants[0] = address(0x123);
         participants[1] = address(0x456);
+        uint256[] memory shares = new uint256[](2);
+        shares[0] = 15e18;
+        shares[1] = 15e18;
+
+        vm.expectRevert(SmartContract.OwnerNotParticipant.selector);
+        smartContract.createEvent("abc", PRICE_USD, participants, shares);
+    }
+
+    function testCreateEventWithDuplicateParticipantReverts() public {
+        address[] memory participants = new address[](3);
+        participants[0] = address(this);
+        participants[1] = address(0x123);
+        participants[2] = address(0x123);
+        uint256[] memory shares = new uint256[](3);
+        shares[0] = 10e18;
+        shares[1] = 10e18;
+        shares[2] = 10e18;
+
+        vm.expectRevert(SmartContract.DuplicateParticipant.selector);
+        smartContract.createEvent("abc", PRICE_USD, participants, shares);
+    }
+
+    function testCreateEventWithSharesNotMatchingPriceReverts() public {
+        address[] memory participants = new address[](2);
+        participants[0] = address(this);
+        participants[1] = address(0x123);
+        uint256[] memory shares = new uint256[](2);
+        shares[0] = 10e18;
+        shares[1] = 10e18; // sums to 20e18, but priceUsd is 30e18
+
+        vm.expectRevert(SmartContract.NotEnoughFunds.selector);
+        smartContract.createEvent("abc", PRICE_USD, participants, shares);
+    }
+
+    function testCreateEventEmitsEvent() public {
+        (
+            address[] memory participants,
+            uint256[] memory shares
+        ) = _participantsAndShares();
 
         vm.expectEmit(true, true, true, true);
-        emit SmartContract.EventCreated(
-            0,
-            "abc",
-            address(this),
-            PRICE_USD,
-            SHARE_USD
-        );
-        smartContract.createEvent("abc", PRICE_USD, participants);
+        emit SmartContract.EventCreated(0, "abc", address(this), PRICE_USD);
+        smartContract.createEvent("abc", PRICE_USD, participants, shares);
     }
 
     // =========================================================
@@ -316,7 +404,7 @@ contract SmartContractTest is Test {
 
     function testPaymentEthWhenEthNotSupported() public {
         _createEvent();
-        // _supportEth() ΔΕΝ καλείται
+        // _supportEth() NOT called
 
         vm.prank(address(0x123));
         vm.expectRevert(SmartContract.TokenNotSupported.selector);
@@ -330,7 +418,7 @@ contract SmartContractTest is Test {
         vm.prank(address(0x123));
         smartContract.paymentInEth{value: SHARE_WEI}("abc");
 
-        (, , , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
+        (, , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
             "abc"
         );
         assertEq(havePaidParticipants, 2);
@@ -350,13 +438,12 @@ contract SmartContractTest is Test {
     function testPaymentEthWithinToleranceUnder() public {
         _createEvent();
         _supportEth();
-        // 1% under share — μέσα στο 2% tolerance
         uint256 slightlyUnder = SHARE_WEI - (SHARE_WEI / 200);
 
         vm.prank(address(0x123));
         smartContract.paymentInEth{value: slightlyUnder}("abc");
 
-        (, , , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
+        (, , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
             "abc"
         );
         assertEq(havePaidParticipants, 2);
@@ -365,13 +452,12 @@ contract SmartContractTest is Test {
     function testPaymentEthWithinToleranceOver() public {
         _createEvent();
         _supportEth();
-        // 1% over share — μέσα στο 2% tolerance
         uint256 slightlyOver = SHARE_WEI + (SHARE_WEI / 200);
 
         vm.prank(address(0x123));
         smartContract.paymentInEth{value: slightlyOver}("abc");
 
-        (, , , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
+        (, , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
             "abc"
         );
         assertEq(havePaidParticipants, 2);
@@ -445,7 +531,7 @@ contract SmartContractTest is Test {
         _supportEth();
 
         vm.prank(address(0x123));
-        vm.expectEmit(false, false, false, false); // ελέγχει μόνο ότι γίνεται emit
+        vm.expectEmit(false, false, false, false); // only checks that an emit occurs
         emit SmartContract.Payment(
             address(0x123),
             0,
@@ -472,7 +558,6 @@ contract SmartContractTest is Test {
             ,
             ,
             ,
-            ,
             uint256 participantsCount,
             uint256 havePaidParticipants,
 
@@ -495,14 +580,20 @@ contract SmartContractTest is Test {
     }
 
     function testPaymentEthTransferFails() public {
-        // Ο owner του event είναι ένα contract που δεν δέχεται ETH,
-        // ώστε να καλυφθεί το branch ErrorTransferingEther.
+        // The event owner is a contract that rejects plain ETH,
+        // covering the ErrorTransferingEther branch.
         RejectingReceiver rejecter = new RejectingReceiver(smartContract);
 
-        address[] memory participants = new address[](2);
-        participants[0] = address(0x123);
-        participants[1] = address(0x456);
-        rejecter.createEvent("reject", PRICE_USD, participants);
+        address[] memory participants = new address[](3);
+        participants[0] = address(rejecter);
+        participants[1] = address(0x123);
+        participants[2] = address(0x456);
+        uint256[] memory shares = new uint256[](3);
+        shares[0] = SHARE_USD;
+        shares[1] = SHARE_USD;
+        shares[2] = SHARE_USD;
+
+        rejecter.createEvent("reject", PRICE_USD, participants, shares);
 
         _supportEth();
 
@@ -521,6 +612,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
 
@@ -529,7 +621,7 @@ contract SmartContractTest is Test {
         smartContract.paymentInToken("abc", address(mockToken), tokenShare);
         vm.stopPrank();
 
-        (, , , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
+        (, , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
             "abc"
         );
         assertEq(havePaidParticipants, 2);
@@ -541,6 +633,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
         uint256 ownerBefore = mockToken.balanceOf(address(this));
@@ -555,7 +648,7 @@ contract SmartContractTest is Test {
 
     function testPaymentInTokenWhenTokenNotSupported() public {
         _createEvent();
-        // _supportMockToken() ΔΕΝ καλείται
+        // _supportMockToken() NOT called
 
         vm.startPrank(address(0x123));
         mockToken.approve(address(smartContract), 1000e18);
@@ -570,6 +663,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
         uint256 slightlyUnder = tokenShare - (tokenShare / 200);
@@ -579,7 +673,7 @@ contract SmartContractTest is Test {
         smartContract.paymentInToken("abc", address(mockToken), slightlyUnder);
         vm.stopPrank();
 
-        (, , , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
+        (, , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
             "abc"
         );
         assertEq(havePaidParticipants, 2);
@@ -591,6 +685,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
         uint256 slightlyOver = tokenShare + (tokenShare / 200);
@@ -600,7 +695,7 @@ contract SmartContractTest is Test {
         smartContract.paymentInToken("abc", address(mockToken), slightlyOver);
         vm.stopPrank();
 
-        (, , , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
+        (, , , , , uint256 havePaidParticipants, ) = smartContract.getEvent(
             "abc"
         );
         assertEq(havePaidParticipants, 2);
@@ -612,6 +707,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(this),
             address(mockToken)
         );
 
@@ -628,6 +724,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
 
@@ -644,14 +741,10 @@ contract SmartContractTest is Test {
         _createEvent();
         _supportMockToken();
 
-        uint256 tokenShare = smartContract.getSharedPriceInToken(
-            "abc",
-            address(mockToken)
-        );
-
         vm.startPrank(address(0x789));
+        mockToken.approve(address(smartContract), 1000e18);
         vm.expectRevert(SmartContract.NotAParticipant.selector);
-        smartContract.paymentInToken("abc", address(mockToken), tokenShare);
+        smartContract.paymentInToken("abc", address(mockToken), 1000e18);
         vm.stopPrank();
     }
 
@@ -661,6 +754,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
 
@@ -688,6 +782,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
 
@@ -704,6 +799,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
 
@@ -720,12 +816,13 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
 
         vm.startPrank(address(0x123));
         mockToken.approve(address(smartContract), tokenShare);
-        vm.expectEmit(false, false, false, false); // ελέγχει μόνο ότι γίνεται emit
+        vm.expectEmit(false, false, false, false); // only checks that an emit occurs
         emit SmartContract.Payment(
             address(0x123),
             0,
@@ -753,23 +850,28 @@ contract SmartContractTest is Test {
         _createEvent();
         _supportMockToken();
 
-        uint256 tokenShare = smartContract.getSharedPriceInToken(
+        uint256 tokenShare123 = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
+            address(mockToken)
+        );
+        uint256 tokenShare456 = smartContract.getSharedPriceInToken(
+            "abc",
+            address(0x456),
             address(mockToken)
         );
 
         vm.startPrank(address(0x123));
-        mockToken.approve(address(smartContract), tokenShare);
-        smartContract.paymentInToken("abc", address(mockToken), tokenShare);
+        mockToken.approve(address(smartContract), tokenShare123);
+        smartContract.paymentInToken("abc", address(mockToken), tokenShare123);
         vm.stopPrank();
 
         vm.startPrank(address(0x456));
-        mockToken.approve(address(smartContract), tokenShare);
-        smartContract.paymentInToken("abc", address(mockToken), tokenShare);
+        mockToken.approve(address(smartContract), tokenShare456);
+        smartContract.paymentInToken("abc", address(mockToken), tokenShare456);
         vm.stopPrank();
 
         (
-            ,
             ,
             ,
             ,
@@ -787,6 +889,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
         uint256 ownerBefore = mockToken.balanceOf(address(this));
@@ -856,7 +959,6 @@ contract SmartContractTest is Test {
 
     function testRemoveSupportedToken() public {
         _supportMockToken();
-
         smartContract.removeSupportedToken(address(mockToken));
 
         (
@@ -880,8 +982,7 @@ contract SmartContractTest is Test {
     }
 
     function testRemoveSupportedTokenThatWasNeverSupported() public {
-        // Δεν κάνει revert ακόμα κι αν το token δεν ήταν ποτέ supported —
-        // το delete σε μη-υπάρχον mapping entry είναι no-op.
+        // delete on a non-existent mapping entry is a no-op, no revert
         smartContract.removeSupportedToken(address(mockToken));
 
         (, , , bool isSupported) = smartContract.supportedTokens(
@@ -896,6 +997,7 @@ contract SmartContractTest is Test {
 
         uint256 tokenShare = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(mockToken)
         );
 
@@ -910,7 +1012,6 @@ contract SmartContractTest is Test {
 
     function testRemoveSupportedEth() public {
         _supportEth();
-
         smartContract.removeSupportedToken(address(0));
 
         (, , , bool isSupported) = smartContract.supportedTokens(address(0));
@@ -936,9 +1037,10 @@ contract SmartContractTest is Test {
         _supportEth();
         uint256 weiPrice = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(0)
         );
-        // $10 / $3000 ανά ETH ≈ 0.003333... ETH
+        // $10 / $3000 per ETH ≈ 0.003333... ETH
         assertApproxEqRel(weiPrice, SHARE_WEI, 0.01e18); // 1% tolerance
     }
 
@@ -947,13 +1049,15 @@ contract SmartContractTest is Test {
         _supportEth();
         uint256 weiAt3000 = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(0)
         );
 
-        // Το ETH τώρα κοστίζει $6000 — χρειάζεται μισό ETH
+        // ETH now costs $6000 — half the ETH is needed
         mockPriceFeed.updateAnswer(600000000000);
         uint256 weiAt6000 = smartContract.getSharedPriceInToken(
             "abc",
+            address(0x123),
             address(0)
         );
 
@@ -961,8 +1065,42 @@ contract SmartContractTest is Test {
     }
 
     function testGetSharedPriceInTokenWithInvalidEventId() public {
+        _supportEth();
         vm.expectRevert(SmartContract.InvalidEventId.selector);
-        smartContract.getSharedPriceInToken("xyz", address(0));
+        smartContract.getSharedPriceInToken("xyz", address(0x123), address(0));
+    }
+
+    function testGetSharedPriceInTokenWithUnsupportedToken() public {
+        _createEvent();
+        // _supportEth() NOT called
+        vm.expectRevert(SmartContract.TokenNotSupported.selector);
+        smartContract.getSharedPriceInToken("abc", address(0x123), address(0));
+    }
+
+    function testGetSharedPriceInTokenDiffersPerParticipant() public {
+        address[] memory participants = new address[](3);
+        participants[0] = address(this);
+        participants[1] = address(0x123);
+        participants[2] = address(0x456);
+        uint256[] memory shares = new uint256[](3);
+        shares[0] = 5e18;
+        shares[1] = 10e18;
+        shares[2] = 15e18;
+        smartContract.createEvent("uneven", 30e18, participants, shares);
+        _supportEth();
+
+        uint256 share123 = smartContract.getSharedPriceInToken(
+            "uneven",
+            address(0x123),
+            address(0)
+        );
+        uint256 share456 = smartContract.getSharedPriceInToken(
+            "uneven",
+            address(0x456),
+            address(0)
+        );
+
+        assertApproxEqRel(share456, (share123 * 3) / 2, 0.01e18);
     }
 
     // =========================================================
@@ -975,7 +1113,7 @@ contract SmartContractTest is Test {
         mockPriceFeed.updateAnswer(0);
 
         vm.expectRevert(bytes("Invalid price"));
-        smartContract.getSharedPriceInToken("abc", address(0));
+        smartContract.getSharedPriceInToken("abc", address(0x123), address(0));
     }
 
     function testGetSharedPriceRevertsOnNegativeAnswer() public {
@@ -984,7 +1122,7 @@ contract SmartContractTest is Test {
         mockPriceFeed.updateAnswer(-1);
 
         vm.expectRevert(bytes("Invalid price"));
-        smartContract.getSharedPriceInToken("abc", address(0));
+        smartContract.getSharedPriceInToken("abc", address(0x123), address(0));
     }
 
     function testPaymentEthRevertsOnNonPositivePriceFeed() public {
@@ -1046,7 +1184,6 @@ contract SmartContractTest is Test {
             bytes32 offChainId,
             address eventOwner,
             uint256 totalAmount,
-            uint256 shareAmount,
             uint256 participantsCount,
             uint256 havePaidParticipants,
             SmartContract.EventStatus status
@@ -1056,7 +1193,6 @@ contract SmartContractTest is Test {
         assertEq(offChainId, "abc");
         assertEq(eventOwner, address(this));
         assertEq(totalAmount, PRICE_USD);
-        assertEq(shareAmount, SHARE_USD);
         assertEq(participantsCount, 3);
         assertEq(havePaidParticipants, 1);
         assertEq(uint(status), uint(SmartContract.EventStatus.Opened));
@@ -1073,12 +1209,17 @@ contract SmartContractTest is Test {
 
     function testGetPrice() public {
         _createEvent();
-        assertEq(smartContract.getPrice("abc"), SHARE_USD);
+        assertEq(smartContract.getPrice("abc", address(0x123)), SHARE_USD);
+    }
+
+    function testGetPriceForNonParticipantReturnsZero() public {
+        _createEvent();
+        assertEq(smartContract.getPrice("abc", address(0x789)), 0);
     }
 
     function testGetPriceWithInvalidEventId() public {
         vm.expectRevert(SmartContract.InvalidEventId.selector);
-        smartContract.getPrice("xyz");
+        smartContract.getPrice("xyz", address(0x123));
     }
 
     // =========================================================
@@ -1111,8 +1252,9 @@ contract SmartContractTest is Test {
         _createEvent();
         smartContract.closeEvent("abc");
 
-        (, , , , , , , SmartContract.EventStatus status) = smartContract
-            .getEvent("abc");
+        (, , , , , , SmartContract.EventStatus status) = smartContract.getEvent(
+            "abc"
+        );
         assertEq(uint(status), uint(SmartContract.EventStatus.Closed));
     }
 
@@ -1129,14 +1271,12 @@ contract SmartContractTest is Test {
         smartContract.closeEvent("abc");
     }
 
-    function testCloseAlreadyClosedEvent() public {
+    function testCloseAlreadyClosedEventReverts() public {
         _createEvent();
         smartContract.closeEvent("abc");
-        smartContract.closeEvent("abc"); // δεν κάνει revert
 
-        (, , , , , , , SmartContract.EventStatus status) = smartContract
-            .getEvent("abc");
-        assertEq(uint(status), uint(SmartContract.EventStatus.Closed));
+        vm.expectRevert(SmartContract.EventClosed.selector);
+        smartContract.closeEvent("abc");
     }
 
     // =========================================================
@@ -1146,9 +1286,7 @@ contract SmartContractTest is Test {
     function testReceiveReverts() public {
         vm.expectRevert(bytes("Use payment() function"));
         (bool success, ) = address(smartContract).call{value: 1 ether}("");
-        // Το call{value} πάνω σε revert επιστρέφει false, όχι propagate εδώ,
-        // οπότε ελέγχουμε ρητά και το success flag.
-        success; // silence unused warning if vm.expectRevert δεν πιάσει το χαμηλού επιπέδου call
+        success; // silence unused-variable warning
     }
 
     function testFallbackReverts() public {
@@ -1164,21 +1302,71 @@ contract SmartContractTest is Test {
     // =========================================================
 
     function testFuzzCreateEventShareCalculation(
-        uint256 price,
+        uint256 share,
         uint8 numParticipants
     ) public {
         vm.assume(numParticipants > 0 && numParticipants <= 50);
-        vm.assume(price > 0 && price <= 1_000_000e18);
+        uint256 total = uint256(numParticipants) + 1; // +1 for the owner
+        vm.assume(share > 0 && share <= 1_000_000e18 / total);
 
-        address[] memory participants = new address[](numParticipants);
-        for (uint256 i = 0; i < numParticipants; i++) {
-            participants[i] = address(uint160(i + 1));
+        address[] memory participants = new address[](total);
+        uint256[] memory shares = new uint256[](total);
+
+        participants[0] = address(this);
+        shares[0] = share;
+
+        for (uint256 i = 1; i < total; i++) {
+            participants[i] = address(uint160(100000 + i));
+            shares[i] = share;
         }
 
-        smartContract.createEvent("fuzz", price, participants);
+        uint256 priceUsd = share * total;
 
-        uint256 totalParticipants = uint256(numParticipants) + 1;
-        uint256 expectedShare = price / totalParticipants;
-        assertEq(smartContract.getPrice("fuzz"), expectedShare);
+        smartContract.createEvent("fuzz", priceUsd, participants, shares);
+
+        assertEq(smartContract.getPrice("fuzz", address(this)), share);
+        assertEq(
+            smartContract.getPrice("fuzz", participants[total - 1]),
+            share
+        );
+
+        (
+            ,
+            ,
+            ,
+            uint256 totalAmount,
+            uint256 participantsCount,
+            ,
+
+        ) = smartContract.getEvent("fuzz");
+        assertEq(totalAmount, priceUsd);
+        assertEq(participantsCount, total);
+    }
+
+    function testFuzzCreateEventUnequalSharesMustMatchTotal(
+        uint256 shareA,
+        uint256 shareB
+    ) public {
+        vm.assume(shareA > 0 && shareA <= 500_000e18);
+        vm.assume(shareB > 0 && shareB <= 500_000e18);
+
+        address[] memory participants = new address[](2);
+        participants[0] = address(this);
+        participants[1] = address(0x123);
+        uint256[] memory shares = new uint256[](2);
+        shares[0] = shareA;
+        shares[1] = shareB;
+
+        uint256 correctTotal = shareA + shareB;
+
+        smartContract.createEvent(
+            "fuzzUneven",
+            correctTotal,
+            participants,
+            shares
+        );
+
+        assertEq(smartContract.getPrice("fuzzUneven", address(this)), shareA);
+        assertEq(smartContract.getPrice("fuzzUneven", address(0x123)), shareB);
     }
 }

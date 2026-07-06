@@ -935,3 +935,197 @@
     padding-bottom: 1.5rem;
   }
 }
+
+/* ============================================================
+   STEP 3 — CUSTOM SPLIT CONTROLS (slider + amount input)
+   ============================================================ */
+.split-hint {
+  margin-top: -4px;
+  margin-bottom: 10px;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.split-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.split-reset-btn {
+  flex-shrink: 0;
+  background: transparent;
+  color: var(--brand);
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  border-radius: 100px;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+.split-reset-btn:hover {
+  background: rgba(14, 165, 233, 0.1);
+  border-color: var(--brand);
+  transform: translateY(-1px);
+}
+.split-reset-btn:active {
+  transform: scale(0.97);
+}
+
+/* Lets an .sp-row wrap onto a second line to fit the slider/input
+   controls underneath the name + bar + amount, without touching
+   the base .sp-row rules defined elsewhere. */
+.sp-row--adjustable {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.sp-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+/* Range slider */
+.sp-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(14, 165, 233, 0.18);
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.sp-slider:hover {
+  background: rgba(14, 165, 233, 0.28);
+}
+.sp-slider:focus-visible {
+  box-shadow: 0 0 0 3px var(--brand-glow);
+  border-radius: 3px;
+}
+.sp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--brand);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(14, 165, 233, 0.45);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.sp-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.sp-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(14, 165, 233, 0.18);
+}
+.sp-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--brand);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(14, 165, 233, 0.45);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.sp-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* Amount input */
+.sp-amt-input {
+  width: 92px;
+  flex-shrink: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  border-radius: 8px;
+  background: rgba(14, 165, 233, 0.06);
+  color: inherit;
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: right;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+.sp-amt-input:hover {
+  border-color: rgba(14, 165, 233, 0.5);
+}
+.sp-amt-input:focus {
+  outline: none;
+  border-color: var(--brand);
+  background: rgba(14, 165, 233, 0.1);
+  box-shadow: 0 0 0 3px var(--brand-glow);
+}
+.sp-amt-input::-webkit-outer-spin-button,
+.sp-amt-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.sp-amt-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.sp-percent {
+  flex-shrink: 0;
+  min-width: 40px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+/* Running total row under the split breakdown */
+.split-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(14, 165, 233, 0.15);
+  font-size: 0.78rem;
+}
+.split-total-label {
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+.split-total-value {
+  font-weight: 600;
+  color: #16a34a;
+  transition: color 0.2s ease;
+}
+.split-total-value.split-total-warning {
+  color: #ef4444;
+}
+
+@media (max-width: 500px) {
+  .sp-controls {
+    flex-wrap: wrap;
+  }
+  .sp-amt-input {
+    width: 78px;
+  }
+}

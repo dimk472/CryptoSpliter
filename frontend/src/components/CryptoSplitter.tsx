@@ -63,23 +63,25 @@ const wallets = [
     createWallet("io.zerion.wallet"),
 ];
 
-function currencyToUsd(
-    amount: number,
-    currency: string,
-    rates: Record<string, number>
-): number {
-
-    if (currency === "USD") {
+async function currencyToUsd(amount: number, currency: string): Promise<number> {
+    if (currency === 'USD') {
         return amount;
     }
 
-    const rate = rates[currency];
+    const response = await fetch(`https://open.er-api.com/v6/latest/${encodeURIComponent(currency)}`);
 
-    if (!rate) {
+    if (!response.ok) {
         return 0;
     }
 
-    return amount / rate;
+    const data = await response.json();
+    const usdRate = data?.rates?.USD;
+
+    if (typeof usdRate !== 'number' || !Number.isFinite(usdRate) || usdRate <= 0) {
+        return 0;
+    }
+
+    return amount * usdRate;
 }
 
 function getTxUrl(chain: any, txHash: string) {
@@ -112,7 +114,7 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
     const [eventName, setEventName] = useState('');
     const [totalAmount, setTotalAmount] = useState('');
     const [totalAmountInUsd, setTotalAmountInUsd] = useState<number>(0);
-    const [rates, setRates] = useState<Record<string, number>>({});
+    const [isUsdLoading, setIsUsdLoading] = useState(false);
     const [category, setCategory] = useState('');
     const [currency, setCurrency] = useState('');
     const [myAddress, setMyAddress] = useState('');
@@ -121,6 +123,11 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
     const [blockNumber, setBlockNumber] = useState<number | null>(null);
     const [txHash, setTxHash] = useState<string>('');
     const [isConfirming, setIsConfirming] = useState(false);
+
+    // Custom per-participant amounts, keyed by participant id (0..participantCount-1).
+    // Defaults to an equal split of the total amount; can be adjusted manually in Step 3
+    // via a number input and a percentage slider, kept in sync with each other.
+    const [customAmounts, setCustomAmounts] = useState<Record<number, number>>({});
 
     useEffect(() => {
         if (!walletAddress) return;
@@ -135,58 +142,79 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
     }, [walletAddress]);
 
     useEffect(() => {
-        async function loadRates() {
+        let cancelled = false;
+
+        async function loadUsdAmount() {
+            if (!totalAmount || !currency) {
+                setTotalAmountInUsd(0);
+                setIsUsdLoading(false);
+                return;
+            }
+
+            setIsUsdLoading(true);
+
             try {
-                const response = await fetch(
-                    "https://open.er-api.com/v6/latest/USD"
+                const usd = await currencyToUsd(parseFloat(totalAmount), currency);
 
-                );
-
-                const data = await response.json();
-
-                setRates(data.rates);
+                if (!cancelled) {
+                    setTotalAmountInUsd(Number.isFinite(usd) ? usd : 0);
+                }
             } catch (error) {
-                console.error("Failed to load exchange rates:", error);
+                if (!cancelled) {
+                    console.error("Failed to convert currency to USD:", error);
+                    setTotalAmountInUsd(0);
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsUsdLoading(false);
+                }
             }
         }
 
-        loadRates();
-    }, []);
+        loadUsdAmount();
+
+        return () => {
+            cancelled = true;
+        };
+
+    }, [totalAmount, currency]);
 
     useEffect(() => {
         if (!totalAmount || !currency) {
             setTotalAmountInUsd(0);
             return;
         }
-
-        try {
-            const usd = currencyToUsd(
-                parseFloat(totalAmount),
-                currency,
-                rates
-            );
-
-            setTotalAmountInUsd(usd);
-        } catch (error) {
-            console.error(error);
-            setTotalAmountInUsd(0);
-        }
-    }, [totalAmount, currency, rates]);
+    }, [totalAmount, currency]);
 
     useEffect(() => {
         setParticipants(prev => {
             const updated: Participant[] = [];
             for (let i = 0; i < participantCount; i++) {
+                const defaultAddress = i === 0 ? (prev[i]?.address || walletAddress) : (prev[i]?.address || '');
+
                 updated.push({
                     id: i,
                     name: prev[i]?.name ?? '',
-                    address: prev[i]?.address ?? '',
+                    address: defaultAddress,
                     isYou: i === 0,
                 });
             }
             return updated;
         });
-    }, [participantCount]);
+    }, [participantCount, walletAddress]);
+
+    useEffect(() => {
+        const currentAmt = parseFloat(totalAmount) || 0;
+        const equalShare = participantCount > 0 ? currentAmt / participantCount : 0;
+
+        setCustomAmounts(() => {
+            const next: Record<number, number> = {};
+            for (let i = 0; i < participantCount; i++) {
+                next[i] = equalShare;
+            }
+            return next;
+        });
+    }, [participantCount, totalAmount]);
 
     if (!walletAddress) return null;
 
@@ -220,6 +248,73 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
         setParticipantCount(prev => Math.max(2, Math.min(10, prev + delta)));
     };
 
+    const updateParticipantAmount = (id: number, rawAmount: number) => {
+        if (amt <= 0 || Number.isNaN(rawAmount)) return;
+
+        const clamped = Math.max(0, Math.min(rawAmount, amt));
+
+        setCustomAmounts(prev => {
+            const otherIds = Object.keys(prev)
+                .map(Number)
+                .filter(pid => pid !== id);
+
+            const prevTotalOthers = otherIds.reduce((sum, pid) => sum + (prev[pid] || 0), 0);
+            const remaining = Math.max(0, amt - clamped);
+
+            const next: Record<number, number> = { ...prev, [id]: clamped };
+
+            if (otherIds.length === 0) {
+                return next;
+            }
+
+            if (prevTotalOthers > 0) {
+                let distributed = 0;
+                otherIds.forEach((pid, idx) => {
+                    let value: number;
+                    if (idx === otherIds.length - 1) {
+                        value = remaining - distributed;
+                    } else {
+                        const share = (prev[pid] || 0) / prevTotalOthers;
+                        value = Math.round(remaining * share * 100) / 100;
+                        distributed += value;
+                    }
+                    next[pid] = Math.max(0, value);
+                });
+            } else {
+                const equalShare = remaining / otherIds.length;
+                otherIds.forEach(pid => {
+                    next[pid] = equalShare;
+                });
+            }
+
+            return next;
+        });
+    };
+
+    const updateParticipantPercent = (id: number, percent: number) => {
+        if (Number.isNaN(percent)) return;
+        const clampedPercent = Math.max(0, Math.min(100, percent));
+        updateParticipantAmount(id, (amt * clampedPercent) / 100);
+    };
+
+    const getParticipantPercent = (id: number): number => {
+        if (amt <= 0) return 0;
+        return ((customAmounts[id] ?? 0) / amt) * 100;
+    };
+
+    const totalAllocated = Object.values(customAmounts).reduce((sum, v) => sum + v, 0);
+
+    const resetSplitToEqual = () => {
+        const equalShare = participantCount > 0 ? amt / participantCount : 0;
+        setCustomAmounts(() => {
+            const next: Record<number, number> = {};
+            for (let i = 0; i < participantCount; i++) {
+                next[i] = equalShare;
+            }
+            return next;
+        });
+    };
+
     const confirmEvent = async () => {
         try {
             setIsConfirming(true);
@@ -227,24 +322,63 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
             if (!liveAccount) throw new Error('Wallet not connected.');
             if (!activeChain) throw new Error('No network selected.');
 
+            const splitPayload = participants.map(p => ({
+                id: p.id,
+                name: p.name,
+                address: p.address,
+                amount: Number(customAmounts[p.id] ?? 0),
+            }));
+
+            const splitTotal = splitPayload.reduce((sum, p) => sum + p.amount, 0);
+            if (Math.abs(splitTotal - amt) > 0.01) {
+                throw new Error(
+                    `Split amounts (${splitTotal.toFixed(2)}) must equal the total (${amt.toFixed(2)} ${currency}).`,
+                );
+            }
+
             const creatorAddress = walletAddress || myAddress;
 
             const eventData = `${eventName}-${creatorAddress}-${Date.now()}`;
             const rawHash = ethers.keccak256(ethers.toUtf8Bytes(eventData));
             const offChainId = ('0x' + rawHash.slice(2).padStart(64, '0')) as `0x${string}`;
 
-            // Μετέτρεψε το usd σε string με ακριβώς 18 decimals
-            const usdString = totalAmountInUsd.toFixed(18);
-            const totalAmountToUsd = parseEther(usdString); // ethers parseEther = * 1e18, ασφαλές   
+            const usdAmount = await currencyToUsd(parseFloat(totalAmount) || 0, currency);
 
-            const otherAddresses = participants
-                .filter(p => !p.isYou)
-                .map(p => p.address as `0x${string}`);
+            if (currency !== 'USD' && usdAmount <= 0) {
+                throw new Error('Exchange rate is unavailable. Please try again in a moment.');
+            }
+
+            setTotalAmountInUsd(usdAmount);
+
+            const usdString = usdAmount.toFixed(18);
+            const totalAmountToUsd = parseEther(usdString);
+
+            // The contract stores shares in USD, so convert each custom split to USD
+            // and make the final entry absorb any rounding remainder.
+            const allAddresses = participants.map(p => p.address as `0x${string}`);
+            const totalSplit = splitPayload.reduce((sum, p) => sum + p.amount, 0);
+            if (totalSplit <= 0) {
+                throw new Error('Split amounts must be greater than zero.');
+            }
+
+            const usdScale = 1_000_000_000_000n;
+            let distributedUsd = 0n;
+            const allAmounts = splitPayload.map((participant, index) => {
+                if (index === splitPayload.length - 1) {
+                    return totalAmountToUsd - distributedUsd;
+                }
+
+                const ratioScaled = BigInt(Math.round((participant.amount / totalSplit) * Number(usdScale)));
+                const shareUsd = (totalAmountToUsd * ratioScaled) / usdScale;
+                distributedUsd += shareUsd;
+                return shareUsd;
+            });
 
             const tx = prepareContractCall({
                 contract: getEventContract(activeChain),
                 method: "createEvent",
-                params: [offChainId, totalAmountToUsd, otherAddresses],
+                // ✅ Περνάμε τα σωστά arrays (allAddresses, allAmounts) που περιέχουν και τον Owner
+                params: [offChainId, totalAmountToUsd, allAddresses, allAmounts],
             });
 
             const txResult = await sendTransaction({
@@ -273,9 +407,10 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                     chain_id: activeChain.id,
                     currency: currency,
                     tx_hash: txResult.transactionHash,
-                    participants: participants.map(p => ({
-                        name: p.name,
-                        address: p.address,
+                    participants: splitPayload.map(({ name, address, amount }) => ({
+                        name,
+                        address,
+                        amount,
                     })),
                     off_chain_id: offChainId,
                 }),
@@ -294,7 +429,6 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
             setIsConfirming(false);
         }
     };
-
     const resetAll = () => {
         setCurrentStep(1);
         setEventName('');
@@ -395,7 +529,6 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                     <option value="SAR">SAR - Saudi Riyal</option>
                                     <option value="EGP">EGP - Egyptian Pound</option>
                                 </select>
-
                             </div>
 
                             <div className="field-row">
@@ -428,20 +561,6 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                         <option>Other</option>
                                     </select>
                                 </div>
-                            </div>
-
-                            <div className="field-group">
-                                <label className="field-label">Your wallet address (you paid)</label>
-                                <input
-                                    className="field-input"
-                                    type="text"
-                                    placeholder="0x..."
-                                    value={myAddress}
-                                    onChange={(e) => setMyAddress(e.target.value)}
-                                />
-                                <p className="field-hint">
-                                    You'll be reimbursed by others on <strong>{activeChain?.name ?? 'the selected network'}</strong>.
-                                </p>
                             </div>
 
                             <div className="btn-row">
@@ -480,6 +599,7 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                         <input
                                             className="p-addr-input"
                                             type="text"
+                                            disabled={participant.isYou}
                                             placeholder={participant.isYou ? 'Your wallet address (0x...)' : 'Wallet address (0x...)'}
                                             value={participant.address}
                                             onChange={(e) => updateParticipant(participant.id, 'address', e.target.value)}
@@ -510,12 +630,12 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                     ['Currency', currency || '—'],
                                     ['Total amount', `${amt} ${currency}`, 'blue'],
                                     ['Participants', `${participantCount} people`],
-                                    ['Each owes', `${eachOwes} ${currency}`, 'blue'],
+                                    ['Each owes (default)', `${eachOwes} ${currency}`, 'blue'],
                                     [
                                         'Total in USD',
-                                        Object.keys(rates).length
-                                            ? `$${totalAmountInUsd.toFixed(2)}`
-                                            : 'Loading rates...',
+                                        isUsdLoading
+                                            ? 'Loading conversion...'
+                                            : `$${totalAmountInUsd.toFixed(2)}`,
                                         'blue'
                                     ],
                                 ].map(([label, value, accent]) => (
@@ -527,16 +647,69 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                             </div>
 
                             <div className="split-preview">
-                                <p className="split-preview-title">Split breakdown</p>
-                                {participants.map((participant, idx) => (
-                                    <div key={participant.id} className="sp-row">
-                                        <span className="sp-name">{participant.name || `Person ${idx + 1}`}</span>
-                                        <div className="sp-bar-wrap">
-                                            <div className="sp-bar" style={{ width: `${Math.round(100 / participantCount)}%` }} />
+                                <div className="split-preview-header">
+                                    <p className="split-preview-title">Split breakdown</p>
+                                    <button
+                                        type="button"
+                                        className="split-reset-btn"
+                                        onClick={resetSplitToEqual}
+                                    >
+                                        Reset to equal split
+                                    </button>
+                                </div>
+                                <p className="split-hint">
+                                    Defaults to an equal split. Drag a slider or type an amount to customize —
+                                    the rest adjust automatically so the total always matches the amount above.
+                                </p>
+
+                                {participants.map((participant, idx) => {
+                                    const share = customAmounts[participant.id] ?? 0;
+                                    const percent = getParticipantPercent(participant.id);
+                                    const label = participant.name || `Person ${idx + 1}`;
+
+                                    return (
+                                        <div key={participant.id} className="sp-row sp-row--adjustable">
+                                            <span className="sp-name">{label}</span>
+                                            <div className="sp-bar-wrap">
+                                                <div className="sp-bar" style={{ width: `${percent}%` }} />
+                                            </div>
+                                            <span className="sp-amt">{share.toFixed(2)} {currency}</span>
+
+                                            <div className="sp-controls">
+                                                <input
+                                                    type="range"
+                                                    min={0}
+                                                    max={100}
+                                                    step={0.1}
+                                                    value={percent}
+                                                    onChange={(e) => updateParticipantPercent(participant.id, parseFloat(e.target.value))}
+                                                    aria-label={`${label} share percentage`}
+                                                    className="sp-slider"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    max={amt}
+                                                    step="0.01"
+                                                    value={makeFinite(share)}
+                                                    onChange={(e) => updateParticipantAmount(participant.id, parseFloat(e.target.value))}
+                                                    aria-label={`${label} amount`}
+                                                    className="sp-amt-input"
+                                                />
+                                                <span className="sp-percent">{percent.toFixed(1)}%</span>
+                                            </div>
                                         </div>
-                                        <span className="sp-amt">{eachOwes} {currency}</span>
-                                    </div>
-                                ))}
+                                    );
+                                })}
+
+                                <div className="split-total-row">
+                                    <span className="split-total-label">Total allocated</span>
+                                    <span
+                                        className={`split-total-value${Math.abs(totalAllocated - amt) > 0.01 ? ' split-total-warning' : ''}`}
+                                    >
+                                        {totalAllocated.toFixed(2)} / {amt.toFixed(2)} {currency}
+                                    </span>
+                                </div>
                             </div>
 
                             <div className="divider" />
@@ -586,9 +759,6 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                     </div>
                                 ))}
 
-
-
-
                                 <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
                                     <span className="on-chain-tag">
                                         <span className="on-chain-dot2" />
@@ -624,6 +794,10 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
             </div>
         </div>
     );
+}
+
+function makeFinite(val: number): number {
+    return Number.isFinite(val) ? Number(val.toFixed(2)) : 0;
 }
 
 function CryptoSpliter() {
@@ -812,7 +986,7 @@ function CryptoSpliter() {
                                         <div className="card-amount">0.85 ETH</div>
                                         <div className="card-desc">Lisbon trip · Shared accommodation</div>
                                         <div className="card-splits">
-                                            {[['Alex', '45%', '0.38 ETH'], ['Kim', '30%', '0.25 ETH'], ['Max', '25%', '0.22 ETH']].map(([name, w, a]) => (
+                                            {[["Alex", "45%", "0.38 ETH"], ["Kim", "30%", "0.25 ETH"], ["Max", "25%", "0.22 ETH"]].map(([name, w, a]) => (
                                                 <div className="split-row" key={name}>
                                                     <span className="split-name">{name}</span>
                                                     <div className="split-bar-wrap">
@@ -874,7 +1048,6 @@ function CryptoSpliter() {
                                 </div>
                             </div>
 
-                            {/* Improved Minimal Donate Button */}
                             <div className="footer-donate-wrapper">
                                 <a
                                     onClick={openDonateSection}
