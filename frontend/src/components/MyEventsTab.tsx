@@ -257,7 +257,7 @@ function EventCard({
                                 <div key={i} className="me-participant-row">
                                     <div
                                         className="me-p-avatar"
-                                        style={{ background: i % 4 === 0 ? '#0ea5e9' : '#0369a1' }}
+                                        style={{ background: i % 4 === 0 ? '#baf24a' : '#013330' }}
                                     >
                                         {p.name ? p.name[0].toUpperCase() : '?'}
                                     </div>
@@ -537,11 +537,11 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
 
                 {/* ── Content ── */}
                 {loading ? (
-                    <p style={{ textAlign: 'center', color: '#3d5a74', padding: '2rem' }}>
+                    <p style={{ textAlign: 'center', color: 'var(--ink-muted)', padding: '2rem' }}>
                         Loading your events…
                     </p>
                 ) : events.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#3d5a74' }}>
+                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-muted)' }}>
                         <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}><Inbox /></p>
                         <p style={{ fontWeight: 600 }}>No events yet</p>
                         <p style={{ fontSize: '13px', marginTop: '4px' }}>
@@ -549,7 +549,7 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                         </p>
                     </div>
                 ) : filteredEvents.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#3d5a74' }}>
+                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-muted)' }}>
                         <p style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}><Search /></p>
                         <p style={{ fontWeight: 600 }}>No events found</p>
                         <p style={{ fontSize: '13px', marginTop: '4px' }}>

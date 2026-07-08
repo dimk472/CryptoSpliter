@@ -12,12 +12,14 @@ import {
 } from "thirdweb/react";
 import { client } from "../ThirdwebClient.tsx";
 import { createWallet } from "thirdweb/wallets";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TermsOfUse from './TermsOfUse.tsx';
 import PrivacyPolicy from './PrivacyPolicy.tsx';
 import DonateSection from "./DonateSection.tsx";
 import { shortenAddress } from "thirdweb/utils";
 import { ethers } from "ethers";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLinkedinIn } from '@fortawesome/free-brands-svg-icons';
 import logo from '../assets/logo.png';
 import {
     ethereum,
@@ -39,7 +41,7 @@ import '../components/styles/splitingApp.css'
 import { parseEther } from "ethers"
 import LoadingEffect from './loadingEffect/LoadingEffect.tsx';
 
-const COLORS = ['#0ea5e9', '#0369a1', '#38bdf8', '#0c1825', '#3d5a74', '#22c55e'];
+const COLORS = ['#baf24a', '#013330', '#d8ff7a', '#1d2127', '#95a09a', '#8fb92f'];
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 
 const SUPPORTED_CHAINS = [
@@ -713,7 +715,7 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                             </div>
 
                             <div className="divider" />
-                            <p style={{ fontSize: '12px', color: '#3d5a74', lineHeight: '1.6' }}>
+                            <p style={{ fontSize: '12px', color: 'var(--ink-muted)', lineHeight: '1.6' }}>
                                 By confirming, the smart contract on <strong>{activeChain?.name}</strong> will register this event.
                                 Each participant will receive a request to send their share directly to your wallet.
                             </p>
@@ -772,7 +774,7 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                             href={getTxUrl(activeChain, txHash)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            style={{ fontSize: '11px', color: '#0ea5e9', textDecoration: 'underline' }}
+                                            style={{ fontSize: '11px', color: 'var(--brand)', textDecoration: 'underline' }}
                                         >
                                             View on explorer ↗
                                         </a>
@@ -805,6 +807,8 @@ function CryptoSpliter() {
     const [stableWalletAddress, setStableWalletAddress] = useState('');
     const [showLoading, setShowLoading] = useState(true);
     const [activeLegalPage, setActiveLegalPage] = useState<'privacy' | 'terms' | 'donate' | null>(null);
+    const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+    const navRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
         if (account?.address) {
@@ -815,11 +819,43 @@ function CryptoSpliter() {
         return () => window.clearTimeout(timeoutId);
     }, [account?.address]);
 
+    // Close the mobile menu when the viewport grows past the mobile
+    // breakpoint, and on outside clicks / Escape while it's open.
+    useEffect(() => {
+        const mq = window.matchMedia('(min-width: 768px)');
+        const handleChange = () => setIsMobileNavOpen(false);
+        mq.addEventListener('change', handleChange);
+        return () => mq.removeEventListener('change', handleChange);
+    }, []);
+
+    useEffect(() => {
+        if (!isMobileNavOpen) return;
+
+        const handleOutsideClick = (event: MouseEvent) => {
+            if (navRef.current && !navRef.current.contains(event.target as Node)) {
+                setIsMobileNavOpen(false);
+            }
+        };
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setIsMobileNavOpen(false);
+        };
+
+        document.addEventListener('mousedown', handleOutsideClick);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isMobileNavOpen]);
+
     const activeAddress = account?.address ?? stableWalletAddress;
 
     const handleLoadingComplete = () => {
         setShowLoading(false);
     };
+
+    const toggleMobileNav = () => setIsMobileNavOpen(prev => !prev);
+    const closeMobileNav = () => setIsMobileNavOpen(false);
 
     const openPrivacyPolicy = (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault();
@@ -903,20 +939,48 @@ function CryptoSpliter() {
                         <a href="#home" className="logo">
                             <img src={logo} alt="CryptoSpliter Logo" />
                         </a>
-                        <nav className="nav" id="nav">
-                            <ul className="nav-list">
-                                <li><a href="#hero" className="nav-link">Dashboard</a></li>
-                                <li><a href="#my-events" className="nav-link">My Events</a></li>
+
+                        <nav className="nav" id="nav" ref={navRef}>
+                            <button
+                                type="button"
+                                className={`nav-toggle${isMobileNavOpen ? ' is-open' : ''}`}
+                                aria-label={isMobileNavOpen ? 'Close menu' : 'Open menu'}
+                                aria-expanded={isMobileNavOpen}
+                                aria-controls="nav-list"
+                                onClick={toggleMobileNav}
+                            >
+                                <span className="nav-toggle-bar" />
+                            </button>
+
+                            <ul
+                                className={`nav-list${isMobileNavOpen ? ' nav-list--open' : ''}`}
+                                id="nav-list"
+                            >
+                                <li><a href="#hero" className="nav-link" onClick={closeMobileNav}>Dashboard</a></li>
+                                <li><a href="#my-events" className="nav-link" onClick={closeMobileNav}>My Events</a></li>
+                                <li className="nav-connect-item">
+                                    <ConnectButton
+                                        client={client}
+                                        chains={SUPPORTED_CHAINS}
+                                        connectButton={{ label: "Connect Wallet", className: "custom-connect-btn" }}
+                                        detailsButton={{ render: () => <WalletDetails /> }}
+                                        connectModal={{ showThirdwebBranding: false, size: "compact" }}
+                                        wallets={wallets}
+                                    />
+                                </li>
                             </ul>
                         </nav>
-                        <ConnectButton
-                            client={client}
-                            chains={SUPPORTED_CHAINS}
-                            connectButton={{ label: "Connect Wallet", className: "custom-connect-btn" }}
-                            detailsButton={{ render: () => <WalletDetails /> }}
-                            connectModal={{ showThirdwebBranding: false, size: "compact" }}
-                            wallets={wallets}
-                        />
+
+                        <div className="header-connect-desktop">
+                            <ConnectButton
+                                client={client}
+                                chains={SUPPORTED_CHAINS}
+                                connectButton={{ label: "Connect Wallet", className: "custom-connect-btn" }}
+                                detailsButton={{ render: () => <WalletDetails /> }}
+                                connectModal={{ showThirdwebBranding: false, size: "compact" }}
+                                wallets={wallets}
+                            />
+                        </div>
                     </div>
                 </header>
 
@@ -929,18 +993,16 @@ function CryptoSpliter() {
                             <div className="hero-left">
                                 <div className="badge">
                                     <span className="badge-dot" />
-                                    On-chain · Trustless · Instant
+                                    Sepolia testnet · Fully on-chain
                                 </div>
 
                                 <h1 className="hero-title">
-                                    Split crypto<br />
-                                    with <em>anyone</em>,<br />
-                                    seamlessly.
+                                    Split it exactly.<br />
+                                    <em>Settle</em> it on-chain.
                                 </h1>
 
                                 <p className="hero-desc">
-                                    Transparent expense splitting built on-chain. No trust required —
-                                    just connect your wallet and let the smart contract handle the rest.
+                                    Create an expense, invite wallets, and choose equal or custom splits. Every payment goes directly between wallets, secured by smart contracts.
                                 </p>
 
                                 <div className="hero-actions">
@@ -954,68 +1016,125 @@ function CryptoSpliter() {
                                     />
                                 </div>
 
+                                <div className="wallet-trust">
+                                    <div className="wallet-trust-avatars">
+                                        <div className="avatar av1">M</div>
+                                        <div className="avatar av2">C</div>
+                                        <div className="avatar av3">R</div>
+                                        <div className="avatar av4">R</div>
+                                        <div className="avatar av5">Z</div>
+                                    </div>
+                                    <span className="wallet-trust-label">Works with the wallet you already use</span>
+                                </div>
+
                                 <div className="stats-row">
                                     <div className="stat">
-                                        <span className="stat-value">$2.4M+</span>
-                                        <span className="stat-label">settled on-chain</span>
+                                        <span className="stat-value">2–10</span>
+                                        <span className="stat-label">people per split</span>
                                     </div>
                                     <div className="stat">
-                                        <span className="stat-value">12k</span>
-                                        <span className="stat-label">active wallets</span>
+                                        <span className="stat-value">35+</span>
+                                        <span className="stat-label">currencies supported</span>
                                     </div>
                                     <div className="stat">
-                                        <span className="stat-value">0 fees</span>
-                                        <span className="stat-label">platform cost</span>
+                                        <span className="stat-value">ETH · LINK</span>
+                                        <span className="stat-label">accepted on Sepolia</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="hero-right">
-                                <div className="card-stack">
-                                    <div className="glass-card card-back2" />
-                                    <div className="glass-card card-back1" />
-                                    <div className="glass-card card-main">
-                                        <div className="card-header">
-                                            <div className="card-avatars">
+                                <div className="ledger-stack">
+                                    <div className="ledger-back" />
+                                    <div className="ledger-card">
+                                        <div className="ledger-head">
+                                            <span className="ledger-tag">Custom split</span>
+                                            <span className="ledger-chain">Sepolia</span>
+                                        </div>
+
+                                        <div className="ledger-title">Dinner in Lisbon</div>
+                                        <div className="ledger-total">
+                                            €7.00 <span className="ledger-total-usd">≈ $7.58</span>
+                                        </div>
+
+                                        <div className="ledger-split-toggle">
+                                            <span className="split-toggle-pill split-toggle-pill--active">Custom</span>
+                                            <span className="split-toggle-pill">Equal</span>
+                                        </div>
+
+                                        <div className="ledger-rows">
+                                            <div className="ledger-row">
                                                 <div className="avatar av1">A</div>
-                                                <div className="avatar av2">K</div>
-                                                <div className="avatar av3">M</div>
-                                            </div>
-                                            <div className="card-label">Group expense</div>
-                                        </div>
-                                        <div className="card-amount">0.85 ETH</div>
-                                        <div className="card-desc">Lisbon trip · Shared accommodation</div>
-                                        <div className="card-splits">
-                                            {[["Alex", "45%", "0.38 ETH"], ["Kim", "30%", "0.25 ETH"], ["Max", "25%", "0.22 ETH"]].map(([name, w, a]) => (
-                                                <div className="split-row" key={name}>
-                                                    <span className="split-name">{name}</span>
-                                                    <div className="split-bar-wrap">
-                                                        <div className="split-bar" style={{ width: w }} />
-                                                    </div>
-                                                    <span className="split-amount">{a}</span>
+                                                <span className="ledger-name">Alex</span>
+                                                <div className="ledger-bar-wrap">
+                                                    <div className="ledger-bar" style={{ width: '29%' }} />
                                                 </div>
-                                            ))}
+                                                <span className="ledger-amt">€2.00</span>
+                                            </div>
+                                            <div className="ledger-row">
+                                                <div className="avatar av2">M</div>
+                                                <span className="ledger-name">Mira</span>
+                                                <div className="ledger-bar-wrap">
+                                                    <div className="ledger-bar" style={{ width: '71%' }} />
+                                                </div>
+                                                <span className="ledger-amt">€5.00</span>
+                                            </div>
                                         </div>
-                                        <div className="card-footer">
+
+                                        <div className="ledger-footer">
                                             <span className="on-chain-dot" />
-                                            Confirmed on-chain · block #19482301
+                                            Settled via LINK · block #8,241,033
                                         </div>
                                     </div>
+
                                     <div className="float-badge float-badge-1">
                                         <div className="float-icon fi-green">✓</div>
                                         <div className="float-text">
-                                            <div className="float-top">Auto-settled</div>
-                                            <div className="float-sub">2s ago · no gas</div>
+                                            <div className="float-top">Non-custodial</div>
+                                            <div className="float-sub">funds never touch us</div>
                                         </div>
                                     </div>
                                     <div className="float-badge float-badge-2">
                                         <div className="float-icon fi-blue">⬡</div>
                                         <div className="float-text">
-                                            <div className="float-top">Smart contract</div>
-                                            <div className="float-sub">fully audited</div>
+                                            <div className="float-top">Trustless split</div>
+                                            <div className="float-sub">enforced by contract</div>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                {/* ==================== SECTION: HOW IT WORKS ==================== */}
+                <section className="how-it-works" id="how-it-works">
+                    <div className="hiw-container">
+                        <p className="hiw-label">How it Works</p>
+                        <h2 className="hiw-heading">Split expenses in 3 simple steps</h2>
+
+                        <div className="hiw-grid">
+                            <div className="hiw-card">
+                                <div className="hiw-step-num">01</div>
+                                <h3 className="hiw-card-title">Create an Event</h3>
+                                <p className="hiw-card-desc">
+                                    Connect your wallet, give your expense a name (e.g., Dinner in Lisbon), select the currency, and enter the total amount paid.
+                                </p>
+                            </div>
+
+                            <div className="hiw-card">
+                                <div className="hiw-step-num">02</div>
+                                <h3 className="hiw-card-title">Add Friends & Split</h3>
+                                <p className="hiw-card-desc">
+                                    Set the number of participants and input their wallet addresses. Choose an Equal split or customize everyone's share using the sliders.
+                                </p>
+                            </div>
+
+                            <div className="hiw-card">
+                                <div className="hiw-step-num">03</div>
+                                <h3 className="hiw-card-title">Confirm On-Chain</h3>
+                                <p className="hiw-card-desc">
+                                    Sign the transaction. Your expense is logged trustlessly on the smart contract, allowing friends to settle up directly to your wallet.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -1036,14 +1155,8 @@ function CryptoSpliter() {
                                     Create an event, add your friends, log what you paid, and let the protocol do the math.
                                 </p>
                                 <div className="footer-social">
-                                    <a href="https://www.facebook.com/BlueMedThessaloniki/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                                        <i className="fab fa-facebook-f"></i>
-                                    </a>
-                                    <a href="https://www.instagram.com/bluemedthess" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                                        <i className="fab fa-instagram"></i>
-                                    </a>
-                                    <a href="https://www.linkedin.com/company/bluemedgreece" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-                                        <i className="fab fa-linkedin-in"></i>
+                                    <a href="https://www.linkedin.com/in/dimitris-kazantzis-5b575936a/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                                        <FontAwesomeIcon icon={faLinkedinIn} />
                                     </a>
                                 </div>
                             </div>

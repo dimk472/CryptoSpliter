@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   width: 100%;
-  background: #000000;
+  background: #131416;
   z-index: 9999;
   transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
   overflow: hidden;
