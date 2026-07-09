@@ -1,6 +1,6 @@
 /* ============================================================
    SA (SPLIT & SETTLE) SECTION - FULLY MOBILE FRIENDLY
-   ELECTRIC CYBER MINT THEME
+   UPDATED TO BRANDED DESIGN SYSTEM WITH FULL COLOR PALETTE
    ============================================================ */
 
 @import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap");
@@ -105,7 +105,7 @@
 /* CARD - MOBILE FIRST */
 .sa-card {
   background: var(--surface);
-  border: 1px solid rgba(186, 242, 74, 0.14);
+  border: 1px solid var(--brand-glow);
   border-radius: 16px;
   padding: 20px 16px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.32);
@@ -177,7 +177,7 @@
   height: 24px;
   border-radius: 50%;
   border: 1.5px solid rgba(186, 242, 74, 0.22);
-  background: rgba(1, 51, 48, 0.48);
+  background: var(--accent-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -204,11 +204,23 @@
   }
 }
 
-.step-circle.active {
+/* Each step gets its own color */
+.step-item:nth-child(1) .step-circle.active {
   background: var(--brand);
   border-color: var(--brand);
-  color: var(--ink-dark);
-  box-shadow: 0 0 0 4px rgba(186, 242, 74, 0.16);
+  box-shadow: 0 0 0 4px rgba(186, 242, 74, 0.3);
+}
+
+.step-item:nth-child(3) .step-circle.active {
+  background: var(--secondary);
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 4px rgba(139, 124, 246, 0.3);
+}
+
+.step-item:nth-child(5) .step-circle.active {
+  background: var(--tertiary);
+  border-color: var(--tertiary);
+  box-shadow: 0 0 0 4px rgba(76, 224, 208, 0.3);
 }
 
 .step-circle.done {
@@ -233,7 +245,7 @@
 }
 
 .step-line.done {
-  background: var(--brand);
+  background: var(--gradient-primary);
 }
 
 .step-label {
@@ -370,7 +382,7 @@
 .field-input:focus,
 .field-input-big:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(186, 242, 74, 0.1);
+  box-shadow: 0 0 0 3px var(--brand-glow);
   background: var(--surface-elevated);
 }
 
@@ -431,13 +443,13 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1.5px solid rgba(186, 242, 74, 0.22);
-  background: rgba(1, 51, 48, 0.48);
+  border: 1.5px solid var(--secondary-glow);
+  background: var(--accent-soft);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  color: var(--brand-dark);
+  color: var(--secondary-light);
   cursor: pointer;
   transition: all 0.18s;
   flex-shrink: 0;
@@ -462,12 +474,23 @@
 }
 
 .count-btn:hover {
-  background: rgba(186, 242, 74, 0.1);
-  border-color: var(--brand);
+  background: var(--secondary-glow);
+  border-color: var(--secondary);
 }
 
 .count-btn:active {
   transform: scale(0.92);
+}
+
+/* Minus button uses tertiary for distinction */
+.count-btn:first-of-type {
+  border-color: var(--tertiary-glow);
+  color: var(--tertiary);
+}
+
+.count-btn:first-of-type:hover {
+  background: var(--tertiary-glow);
+  border-color: var(--tertiary);
 }
 
 .count-display {
@@ -561,6 +584,16 @@
   background: var(--brand);
 }
 
+.participant-row:nth-child(3n + 2) .p-avatar {
+  background: var(--secondary);
+  color: var(--ink-dark);
+}
+
+.participant-row:nth-child(3n + 3) .p-avatar {
+  background: var(--tertiary);
+  color: var(--ink-dark);
+}
+
 @media (min-width: 480px) {
   .p-avatar {
     width: 30px;
@@ -646,8 +679,8 @@
 .p-you-tag {
   font-size: 9px;
   font-weight: 600;
-  color: var(--brand-dark);
-  background: rgba(186, 242, 74, 0.1);
+  color: var(--tertiary-dark);
+  background: var(--tertiary-glow);
   border-radius: 100px;
   padding: 2px 6px;
   white-space: nowrap;
@@ -717,8 +750,24 @@
   word-break: break-word;
 }
 
-.summary-value.blue {
+.summary-value.brand {
   color: var(--brand-dark);
+}
+
+.summary-value.secondary {
+  color: var(--secondary-light);
+}
+
+.summary-value.tertiary {
+  color: var(--tertiary);
+}
+
+.summary-value.positive {
+  color: var(--success);
+}
+
+.summary-value.negative {
+  color: var(--danger);
 }
 
 .split-preview {
@@ -784,10 +833,18 @@
 
 .sp-name {
   font-size: 11px;
-  color: var(--ink);
+  color: var(--brand-light);
   width: 60px;
   flex-shrink: 0;
   word-break: break-word;
+}
+
+.sp-row:nth-child(3n + 2) .sp-name {
+  color: var(--secondary-light);
+}
+
+.sp-row:nth-child(3n + 3) .sp-name {
+  color: var(--tertiary-light);
 }
 
 @media (min-width: 480px) {
@@ -820,8 +877,16 @@
 
 .sp-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--brand), var(--brand-light));
+  background: var(--brand);
   border-radius: 3px;
+}
+
+.sp-row:nth-child(3n + 2) .sp-bar {
+  background: var(--secondary);
+}
+
+.sp-row:nth-child(3n + 3) .sp-bar {
+  background: var(--tertiary);
 }
 
 .sp-amt {
@@ -831,6 +896,14 @@
   min-width: 55px;
   text-align: right;
   flex-shrink: 0;
+}
+
+.sp-row:nth-child(3n + 2) .sp-amt {
+  color: var(--secondary-light);
+}
+
+.sp-row:nth-child(3n + 3) .sp-amt {
+  color: var(--tertiary);
 }
 
 @media (min-width: 480px) {
@@ -887,7 +960,7 @@
 .btn-primary:hover {
   background: var(--brand-dark);
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(186, 242, 74, 0.16);
+  box-shadow: 0 12px 24px var(--brand-glow);
 }
 
 .btn-primary:active {
@@ -902,8 +975,8 @@
   gap: 6px;
   height: 40px;
   background: rgba(1, 51, 48, 0.4);
-  color: var(--brand-dark);
-  border: 1.5px solid rgba(186, 242, 74, 0.18);
+  color: var(--secondary-light);
+  border: 1.5px solid var(--secondary-glow);
   border-radius: 8px;
   font-family: "DM Sans", sans-serif;
   font-size: 12px;
@@ -932,11 +1005,57 @@
 }
 
 .btn-secondary:hover {
-  background: rgba(186, 242, 74, 0.1);
-  border-color: var(--brand);
+  background: var(--secondary-glow);
+  border-color: var(--secondary);
 }
 
 .btn-secondary:active {
+  transform: scale(0.98);
+}
+
+/* Tertiary button for additional actions */
+.btn-tertiary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  background: rgba(1, 51, 48, 0.4);
+  color: var(--tertiary);
+  border: 1.5px solid var(--tertiary-glow);
+  border-radius: 8px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: all 0.18s;
+  touch-action: manipulation;
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .btn-tertiary {
+    height: 42px;
+    font-size: 13px;
+    padding: 0 18px;
+    width: auto;
+  }
+}
+
+@media (min-width: 768px) {
+  .btn-tertiary {
+    height: 44px;
+    padding: 0 20px;
+  }
+}
+
+.btn-tertiary:hover {
+  background: var(--tertiary-glow);
+  border-color: var(--tertiary);
+}
+
+.btn-tertiary:active {
   transform: scale(0.98);
 }
 
@@ -1002,13 +1121,13 @@
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: rgba(186, 242, 74, 0.14);
+  background: rgba(74, 222, 128, 0.14);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 14px;
   font-size: 20px;
-  color: var(--brand-dark);
+  color: var(--success);
 }
 
 @media (min-width: 480px) {
@@ -1101,8 +1220,8 @@
   align-items: center;
   gap: 5px;
   font-size: 10px;
-  color: var(--brand-dark);
-  background: rgba(186, 242, 74, 0.1);
+  color: var(--info);
+  background: rgba(76, 201, 240, 0.12);
   border-radius: 100px;
   padding: 4px 10px;
   margin-top: 12px;
@@ -1119,7 +1238,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--brand);
+  background: var(--info);
   animation: pulse2 1.5s ease-in-out infinite;
 }
 
@@ -1199,7 +1318,8 @@
   }
 
   .btn-primary,
-  .btn-secondary {
+  .btn-secondary,
+  .btn-tertiary {
     height: 36px;
     font-size: 11px;
     padding: 0 14px;
@@ -1263,6 +1383,7 @@
   .count-btn,
   .btn-primary,
   .btn-secondary,
+  .btn-tertiary,
   .participant-row,
   .step-item {
     touch-action: manipulation;
@@ -1273,7 +1394,8 @@
   }
 
   .btn-primary:active,
-  .btn-secondary:active {
+  .btn-secondary:active,
+  .btn-tertiary:active {
     transform: scale(0.98);
   }
 }
@@ -1298,8 +1420,8 @@
 /* HOVER EFFECTS FOR TOUCH DEVICES */
 @media (hover: none) {
   .count-btn:hover {
-    background: rgba(1, 51, 48, 0.48);
-    border-color: rgba(186, 242, 74, 0.22);
+    background: var(--accent-soft);
+    border-color: var(--secondary-glow);
   }
 
   .btn-primary:hover {
@@ -1310,7 +1432,12 @@
 
   .btn-secondary:hover {
     background: rgba(1, 51, 48, 0.4);
-    border-color: rgba(186, 242, 74, 0.18);
+    border-color: var(--secondary-glow);
+  }
+
+  .btn-tertiary:hover {
+    background: rgba(1, 51, 48, 0.4);
+    border-color: var(--tertiary-glow);
   }
 }
 
@@ -1329,6 +1456,6 @@
 }
 
 .step-bar::-webkit-scrollbar-thumb {
-  background: rgba(186, 242, 74, 0.3);
+  background: var(--brand-glow);
   border-radius: 4px;
 }

@@ -20,13 +20,17 @@
 
 ![LINK](https://img.shields.io/badge/Payments-LINK-2A5ADA)
 
-<img width="1887" height="867" alt="image" src="https://github.com/user-attachments/assets/59d735cb-814b-4575-9ede-c46d419c3266" />
+<img width="1868" height="845" alt="image" src="https://github.com/user-attachments/assets/05ebf853-8b90-4a3e-bd83-cadff54e1991" />
 
-<img width="1887" height="731" alt="image" src="https://github.com/user-attachments/assets/94959453-e051-4709-b7f9-4eb28e1558ee" />
+<img width="1840" height="737" alt="image" src="https://github.com/user-attachments/assets/7cc0100f-90cd-4a50-b606-6956ee8f76bc" />
 
-<img width="1877" height="652" alt="image" src="https://github.com/user-attachments/assets/50ab6719-394f-40f3-98c4-7d226b640a75" />
+<img width="1813" height="672" alt="image" src="https://github.com/user-attachments/assets/df1e3b10-c736-44c5-9e74-732e7c863b6b" />
 
-<img width="1882" height="712" alt="image" src="https://github.com/user-attachments/assets/360a925c-7123-4bd8-8d0a-4c3b69dc79ff" />
+<img width="567" height="662" alt="image" src="https://github.com/user-attachments/assets/8f58a462-17ed-457e-9ed0-c9c4dce687b7" />
+
+<img width="1796" height="447" alt="image" src="https://github.com/user-attachments/assets/7e239f15-a21c-49bb-b930-94a46435060f" />
+
+<img width="1853" height="438" alt="image" src="https://github.com/user-attachments/assets/f40560b4-81f9-450e-9665-3d52a6e634aa" />
 
 ---
 
@@ -415,24 +419,33 @@ Designed & developed by **Dimitrios Kazantzis**
 
 ---
 
-# License
+---
 
-Copyright (c) 2026 DIMITRIOS KAZANTZIS
+# ❤️ Support the Project
 
-All Rights Reserved.
+If you enjoy using **CryptoSplitter** and would like to support its development, you can buy me a coffee or donate using PayPal or cryptocurrency.
 
-This software, including all source code, documentation, designs, and associated files, is the exclusive property of the copyright holder.
+## ☕ Buy Me a Coffee
 
-No permission is granted to use, copy, modify, merge, publish, distribute, sublicense, sell, license, host, deploy, or otherwise exploit this software, in whole or in part, without the prior written permission of the copyright holder.
+**PayPal**
 
-Commercial use of this software is strictly prohibited.
+👉 https://paypal.me/dimkaza
 
-Creating derivative works or products based on this software is prohibited without prior written authorization.
+Every contribution helps improve the project and add new features. Thank you for your support! ❤️
 
-Viewing or accessing this repository does not grant any license or right to use the software.
+## 💰 Cryptocurrency Donations
 
-Unauthorized use, reproduction, or distribution may result in legal action under applicable copyright laws.
+### Supported Coins
 
-For licensing inquiries, contact:
+| Coin               | Address                                        |
+| ------------------ | ---------------------------------------------- |
+| **Bitcoin (BTC)**  | `bc1q9n45lwyj0rz9kxk7n0zeqr2hf4hu056aznk8j2`   |
+| **Ethereum (ETH)** | `0x19b2963c6a3a9e674390bab025a96b755137e774`   |
+| **USDT (ERC-20)**  | `0x19b2963c6a3a9e674390bab025a96b755137e774`   |
+| **USDC (ERC-20)**  | `0x19b2963c6a3a9e674390bab025a96b755137e774`   |
+| **BNB**            | `0x19b2963c6a3a9e674390bab025a96b755137e774`   |
+| **Solana (SOL)**   | `GB2FU6f7rAfzbGiLBYrmfJRJkKxb9nnzVTQJej2PzSGf` |
+
+Thank you for supporting the development of **CryptoSplitter**! 🚀❤️
 
 [dimitriskaza2007@gmail.com](mailto:dimitriskaza2007@gmail.com)

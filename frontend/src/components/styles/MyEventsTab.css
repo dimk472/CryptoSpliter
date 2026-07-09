@@ -68,6 +68,17 @@
   letter-spacing: -0.02em;
 }
 
+/* new: the two stats that matter most in a settle-up view are
+   "you're owed" and "you owe" — give them semantic color instead
+   of flattening both into --ink like every other stat */
+.me-stat-value.owed {
+  color: var(--success);
+}
+
+.me-stat-value.owe {
+  color: var(--danger);
+}
+
 .me-stat-label {
   font-size: 12px;
   font-weight: 300;
@@ -97,8 +108,12 @@
   transition: all 0.18s ease;
 }
 
+/* hover now reads as violet (secondary) instead of a duplicate of
+   the accent tone used everywhere else — this is a hover/selection
+   affordance, not a status, so it gets the "UI interaction" hue */
 .me-filter-tab:hover {
-  background: rgba(1, 51, 48, 0.4);
+  background: var(--secondary-glow);
+  border-color: var(--secondary);
   color: var(--ink);
 }
 
@@ -134,20 +149,53 @@
   gap: 12px;
 }
 
+/* Cards cycle a left accent bar — brand / secondary / tertiary —
+   using inset box-shadow so the 16px corner radius stays intact.
+   This is the biggest visual change: instead of every expense
+   card looking identical, each one carries a distinct hue that
+   also drives its category icon below. */
 .me-card {
   background: var(--surface);
   border: 1px solid rgba(186, 242, 74, 0.14);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, 0.28),
+    inset 3px 0 0 var(--brand);
   transition:
     box-shadow 0.2s ease,
     border-color 0.2s ease;
 }
 
+.me-card:nth-child(3n + 2) {
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, 0.28),
+    inset 3px 0 0 var(--secondary);
+}
+
+.me-card:nth-child(3n + 3) {
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, 0.28),
+    inset 3px 0 0 var(--tertiary);
+}
+
 .me-card:hover {
   border-color: rgba(186, 242, 74, 0.24);
-  box-shadow: 0 22px 42px rgba(0, 0, 0, 0.34);
+  box-shadow:
+    0 22px 42px rgba(0, 0, 0, 0.34),
+    inset 3px 0 0 var(--brand);
+}
+
+.me-card:nth-child(3n + 2):hover {
+  box-shadow:
+    0 22px 42px rgba(0, 0, 0, 0.34),
+    inset 3px 0 0 var(--secondary);
+}
+
+.me-card:nth-child(3n + 3):hover {
+  box-shadow:
+    0 22px 42px rgba(0, 0, 0, 0.34),
+    inset 3px 0 0 var(--tertiary);
 }
 
 .me-card--expanded {
@@ -171,17 +219,29 @@
   min-width: 0;
 }
 
+/* category icon now follows the same brand/secondary/tertiary
+   cycle as its parent card */
 .me-cat-icon {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(1, 51, 48, 0.62);
+  background: var(--accent-soft);
   color: var(--brand);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
+}
+
+.me-card:nth-child(3n + 2) .me-cat-icon {
+  background: var(--secondary-glow);
+  color: var(--secondary-light);
+}
+
+.me-card:nth-child(3n + 3) .me-cat-icon {
+  background: var(--tertiary-glow);
+  color: var(--tertiary);
 }
 
 .me-title {
@@ -237,22 +297,25 @@
   white-space: nowrap;
 }
 
+/* status badges now map onto the semantic tokens instead of every
+   state sharing the same brand-green: settled = success (done),
+   partial = warning (needs attention), pending = info (waiting) */
 .me-badge--settled {
-  background: rgba(186, 242, 74, 0.12);
-  color: var(--brand-dark);
-  border: 1px solid rgba(186, 242, 74, 0.22);
+  background: rgba(74, 222, 128, 0.14);
+  color: var(--success);
+  border: 1px solid rgba(74, 222, 128, 0.28);
 }
 
 .me-badge--partial {
-  background: rgba(1, 51, 48, 0.42);
-  color: var(--brand-dark);
-  border: 1px solid rgba(186, 242, 74, 0.16);
+  background: rgba(251, 191, 36, 0.14);
+  color: var(--warning);
+  border: 1px solid rgba(251, 191, 36, 0.28);
 }
 
 .me-badge--pending {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--ink-muted);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(76, 201, 240, 0.12);
+  color: var(--info);
+  border: 1px solid rgba(76, 201, 240, 0.24);
 }
 
 .me-chevron {
@@ -297,9 +360,11 @@
   overflow: hidden;
 }
 
+/* signature gradient instead of a lime-only fade, consistent with
+   .ledger-bar and .sp-bar elsewhere in the app */
 .me-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--brand), var(--brand-light));
+  background: var(--gradient-primary);
   border-radius: 3px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -322,6 +387,9 @@
   flex-wrap: wrap;
 }
 
+/* avatars cycle the same three hues used for cards/icons, so the
+   participant list inside an expanded card feels part of the same
+   system rather than reverting to a single flat color */
 .me-p-avatar {
   width: 30px;
   height: 30px;
@@ -331,8 +399,17 @@
   justify-content: center;
   font-size: 11px;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--ink-dark);
   flex-shrink: 0;
+  background: var(--brand);
+}
+
+.me-participant-row:nth-child(3n + 2) .me-p-avatar {
+  background: var(--secondary);
+}
+
+.me-participant-row:nth-child(3n + 3) .me-p-avatar {
+  background: var(--tertiary);
 }
 
 .me-p-info {
@@ -371,14 +448,15 @@
   flex-shrink: 0;
 }
 
+/* mirrors the card-level badge mapping: paid = success, pending = info */
 .me-p-status--paid {
-  background: rgba(186, 242, 74, 0.12);
-  color: var(--brand-dark);
+  background: rgba(74, 222, 128, 0.14);
+  color: var(--success);
 }
 
 .me-p-status--pending {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--ink-muted);
+  background: rgba(76, 201, 240, 0.12);
+  color: var(--info);
 }
 
 .me-footer-info {
@@ -389,12 +467,15 @@
   gap: 12px;
 }
 
+/* on-chain reference is informational (a tx/network detail), so
+   it now matches --info instead of brand-dark, consistent with the
+   .on-chain-tag treatment in the split-and-settle flow */
 .me-on-chain {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: var(--brand-dark);
+  color: var(--info);
   flex-wrap: wrap;
 }
 
@@ -402,7 +483,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--brand);
+  background: var(--info);
   flex-shrink: 0;
   animation: me-pulse 1.5s ease-in-out infinite;
 }
@@ -446,15 +527,18 @@
   transition: all 0.18s ease;
 }
 
+/* selection UI (choosing a token) now uses secondary — kept
+   distinct from the status colors (success/warning/info) used
+   above, and from the brand-green primary action buttons */
 .me-token-select-trigger:hover:not(:disabled) {
-  background-color: rgba(1, 51, 48, 0.36);
-  border-color: var(--brand);
+  background-color: var(--secondary-glow);
+  border-color: var(--secondary);
 }
 
 .me-token-select-trigger:focus {
   outline: none;
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(186, 242, 74, 0.12);
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px var(--secondary-glow);
 }
 
 .me-token-select-trigger:disabled {
@@ -501,12 +585,12 @@
 }
 
 .me-token-option:hover {
-  background: rgba(1, 51, 48, 0.4);
+  background: var(--secondary-glow);
 }
 
 .me-token-option--active {
-  background: rgba(186, 242, 74, 0.1);
-  color: var(--brand-dark);
+  background: var(--secondary-glow);
+  color: var(--secondary-light);
   font-weight: 600;
 }
 
@@ -554,12 +638,16 @@
   }
 }
 
+/* now uses --danger instead of a hardcoded red (239,68,68) with a
+   hand-picked #ff8f8f text color — ties this error state to the
+   same semantic token used for "you owe" and everywhere else a
+   negative/failure state appears */
 .me-error {
   padding: 16px 20px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.18);
+  background: rgba(251, 92, 92, 0.1);
+  border: 1px solid rgba(251, 92, 92, 0.24);
   border-radius: 10px;
-  color: #ff8f8f;
+  color: var(--danger);
   font-size: 13px;
 }
 
@@ -572,9 +660,12 @@
   text-align: center;
 }
 
+/* empty state now reads as a neutral/informational cyan tint
+   rather than a faded brand-green, so it doesn't look like a
+   washed-out version of the primary action color */
 .me-empty-icon {
   font-size: 40px;
-  color: rgba(186, 242, 74, 0.24);
+  color: var(--tertiary-glow);
   margin-bottom: 16px;
   line-height: 1;
 }
