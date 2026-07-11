@@ -586,7 +586,6 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                     <div key={participant.id} className="participant-row">
                                         <div
                                             className="p-avatar"
-                                            style={{ background: COLORS[idx % COLORS.length] }}
                                         >
                                             {participant.isYou ? 'ME' : String.fromCharCode(65 + idx)}
                                         </div>

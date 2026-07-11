@@ -2,6 +2,7 @@
   position: relative;
   background: var(--bg);
   overflow: hidden;
+  min-height: 100vh;
 }
 
 .me-grid-bg {
@@ -9,68 +10,74 @@
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(186, 242, 74, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(186, 242, 74, 0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(rgba(77, 238, 236, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(77, 238, 236, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.5;
 }
 
 .me-inner {
   position: relative;
   z-index: 1;
-  max-width: 860px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 80px 40px 100px;
+  padding: 60px 32px 80px;
 }
 
+/* --- Section Header --- */
 .me-section-label {
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--brand);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  opacity: 0.7;
 }
 
 .me-heading {
   font-family: "Syne", sans-serif;
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: 2.8rem;
+  font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.03em;
-  margin-bottom: 8px;
+  letter-spacing: -0.04em;
+  margin-bottom: 12px;
+  line-height: 1.1;
 }
 
 .me-sub {
-  font-size: 0.95rem;
-  font-weight: 300;
+  font-size: 1rem;
+  font-weight: 400;
   color: var(--ink-muted);
-  margin-bottom: 36px;
+  margin-bottom: 48px;
+  max-width: 500px;
+  line-height: 1.6;
 }
 
+/* --- Stats Row --- */
 .me-stats-row {
   display: flex;
-  gap: 40px;
-  margin-bottom: 36px;
+  gap: 48px;
+  margin-bottom: 48px;
   flex-wrap: wrap;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
 }
 
 .me-stat {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .me-stat-value {
   font-family: "Syne", sans-serif;
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: 1.8rem;
+  font-weight: 600;
   color: var(--ink);
   letter-spacing: -0.02em;
 }
 
-/* new: the two stats that matter most in a settle-up view are
-   "you're owed" and "you owe" — give them semantic color instead
-   of flattening both into --ink like every other stat */
 .me-stat-value.owed {
   color: var(--success);
 }
@@ -81,132 +88,103 @@
 
 .me-stat-label {
   font-size: 12px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--ink-muted);
+  letter-spacing: 0.02em;
 }
 
+/* --- Filter Tabs --- */
 .me-filter-tabs {
   display: flex;
-  gap: 6px;
-  margin-bottom: 24px;
+  gap: 4px;
+  margin-bottom: 32px;
   flex-wrap: wrap;
+  background: var(--surface-soft);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
 }
 
 .me-filter-tab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 18px;
-  border-radius: 100px;
-  border: 1px solid rgba(186, 242, 74, 0.18);
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
   background: transparent;
   color: var(--ink-muted);
   font-family: "DM Sans", sans-serif;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.2s ease;
 }
 
-/* hover now reads as violet (secondary) instead of a duplicate of
-   the accent tone used everywhere else — this is a hover/selection
-   affordance, not a status, so it gets the "UI interaction" hue */
 .me-filter-tab:hover {
   background: var(--secondary-glow);
-  border-color: var(--secondary);
   color: var(--ink);
 }
 
 .me-filter-tab--active {
   background: var(--brand);
-  border-color: var(--brand);
-  color: var(--accent);
+  color: var(--ink-dark);
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(77, 238, 236, 0.2);
 }
 
 .me-filter-tab--active:hover {
   background: var(--brand-light);
-  border-color: var(--brand-light);
-  color: var(--accent);
+  box-shadow: 0 4px 16px rgba(77, 238, 236, 0.3);
 }
 
 .me-filter-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 100px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
   font-size: 11px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   color: inherit;
+  font-weight: 600;
 }
 
+.me-filter-tab--active .me-filter-count {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--ink-dark);
+}
+
+/* --- List --- */
 .me-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* Cards cycle a left accent bar — brand / secondary / tertiary —
-   using inset box-shadow so the 16px corner radius stays intact.
-   This is the biggest visual change: instead of every expense
-   card looking identical, each one carries a distinct hue that
-   also drives its category icon below. */
+/* --- Card --- */
 .me-card {
   background: var(--surface);
-  border: 1px solid rgba(186, 242, 74, 0.14);
+  border: 1px solid var(--border);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow:
-    0 18px 34px rgba(0, 0, 0, 0.28),
-    inset 3px 0 0 var(--brand);
-  transition:
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.me-card:nth-child(3n + 2) {
-  box-shadow:
-    0 18px 34px rgba(0, 0, 0, 0.28),
-    inset 3px 0 0 var(--secondary);
-}
-
-.me-card:nth-child(3n + 3) {
-  box-shadow:
-    0 18px 34px rgba(0, 0, 0, 0.28),
-    inset 3px 0 0 var(--tertiary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .me-card:hover {
-  border-color: rgba(186, 242, 74, 0.24);
-  box-shadow:
-    0 22px 42px rgba(0, 0, 0, 0.34),
-    inset 3px 0 0 var(--brand);
-}
-
-.me-card:nth-child(3n + 2):hover {
-  box-shadow:
-    0 22px 42px rgba(0, 0, 0, 0.34),
-    inset 3px 0 0 var(--secondary);
-}
-
-.me-card:nth-child(3n + 3):hover {
-  box-shadow:
-    0 22px 42px rgba(0, 0, 0, 0.34),
-    inset 3px 0 0 var(--tertiary);
-}
-
-.me-card--expanded {
-  border-color: rgba(186, 242, 74, 0.3);
+  border-color: rgba(77, 238, 236, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
 }
 
 .me-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 22px;
+  padding: 16px 20px;
   cursor: pointer;
   gap: 16px;
 }
@@ -219,8 +197,6 @@
   min-width: 0;
 }
 
-/* category icon now follows the same brand/secondary/tertiary
-   cycle as its parent card */
 .me-cat-icon {
   width: 40px;
   height: 40px;
@@ -232,22 +208,17 @@
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
+  transition: all 0.2s ease;
 }
 
-.me-card:nth-child(3n + 2) .me-cat-icon {
-  background: var(--secondary-glow);
-  color: var(--secondary-light);
-}
-
-.me-card:nth-child(3n + 3) .me-cat-icon {
-  background: var(--tertiary-glow);
-  color: var(--tertiary);
+.me-card:hover .me-cat-icon {
+  transform: scale(1.05);
 }
 
 .me-title {
   font-family: "Syne", sans-serif;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
@@ -256,7 +227,7 @@
 
 .me-meta {
   font-size: 12px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--ink-muted);
   margin-top: 2px;
 }
@@ -277,67 +248,62 @@
 
 .me-amount {
   font-family: "Syne", sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 600;
   color: var(--ink);
 }
 
 .me-per {
   font-size: 11px;
   color: var(--ink-muted);
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .me-badge {
   padding: 4px 12px;
-  border-radius: 100px;
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
-/* status badges now map onto the semantic tokens instead of every
-   state sharing the same brand-green: settled = success (done),
-   partial = warning (needs attention), pending = info (waiting) */
 .me-badge--settled {
-  background: rgba(74, 222, 128, 0.14);
+  background: rgba(52, 211, 153, 0.12);
   color: var(--success);
-  border: 1px solid rgba(74, 222, 128, 0.28);
 }
 
 .me-badge--partial {
-  background: rgba(251, 191, 36, 0.14);
+  background: rgba(251, 191, 36, 0.12);
   color: var(--warning);
-  border: 1px solid rgba(251, 191, 36, 0.28);
 }
 
 .me-badge--pending {
-  background: rgba(76, 201, 240, 0.12);
+  background: rgba(96, 165, 250, 0.12);
   color: var(--info);
-  border: 1px solid rgba(76, 201, 240, 0.24);
 }
 
 .me-chevron {
-  font-size: 20px;
+  font-size: 18px;
   color: var(--ink-muted);
-  transition: transform 0.22s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   line-height: 1;
   user-select: none;
 }
 
 .me-chevron--open {
-  transform: rotate(90deg);
+  transform: rotate(180deg);
 }
 
+/* --- Card Body --- */
 .me-card-body {
-  padding: 0 22px 20px;
+  padding: 0 20px 20px;
 }
 
 .me-divider {
   height: 1px;
-  background: rgba(186, 242, 74, 0.08);
-  margin-bottom: 18px;
+  background: var(--border);
+  margin-bottom: 20px;
 }
 
 .me-progress-wrap {
@@ -349,31 +315,29 @@
   justify-content: space-between;
   font-size: 12px;
   color: var(--ink-muted);
-  font-weight: 300;
-  margin-bottom: 6px;
+  font-weight: 400;
+  margin-bottom: 8px;
 }
 
 .me-progress-track {
-  height: 5px;
-  background: rgba(1, 51, 48, 0.54);
-  border-radius: 3px;
+  height: 4px;
+  background: var(--surface-elevated);
+  border-radius: 2px;
   overflow: hidden;
 }
 
-/* signature gradient instead of a lime-only fade, consistent with
-   .ledger-bar and .sp-bar elsewhere in the app */
 .me-progress-fill {
   height: 100%;
   background: var(--gradient-primary);
-  border-radius: 3px;
+  border-radius: 2px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .me-participants {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 18px;
+  gap: 6px;
+  margin-bottom: 20px;
 }
 
 .me-participant-row {
@@ -381,35 +345,29 @@
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  background: rgba(1, 51, 48, 0.28);
-  border: 1px solid rgba(186, 242, 74, 0.1);
+  background: var(--surface-soft);
+  border: 1px solid transparent;
   border-radius: 10px;
   flex-wrap: wrap;
+  transition: all 0.2s ease;
 }
 
-/* avatars cycle the same three hues used for cards/icons, so the
-   participant list inside an expanded card feels part of the same
-   system rather than reverting to a single flat color */
+.me-participant-row:hover {
+  border-color: var(--border);
+}
+
 .me-p-avatar {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--ink-dark);
   flex-shrink: 0;
   background: var(--brand);
-}
-
-.me-participant-row:nth-child(3n + 2) .me-p-avatar {
-  background: var(--secondary);
-}
-
-.me-participant-row:nth-child(3n + 3) .me-p-avatar {
-  background: var(--tertiary);
 }
 
 .me-p-info {
@@ -441,21 +399,20 @@
 }
 
 .me-p-status {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
-  padding: 3px 10px;
-  border-radius: 100px;
+  padding: 2px 10px;
+  border-radius: 4px;
   flex-shrink: 0;
 }
 
-/* mirrors the card-level badge mapping: paid = success, pending = info */
 .me-p-status--paid {
-  background: rgba(74, 222, 128, 0.14);
+  background: rgba(52, 211, 153, 0.12);
   color: var(--success);
 }
 
 .me-p-status--pending {
-  background: rgba(76, 201, 240, 0.12);
+  background: rgba(96, 165, 250, 0.12);
   color: var(--info);
 }
 
@@ -467,9 +424,6 @@
   gap: 12px;
 }
 
-/* on-chain reference is informational (a tx/network detail), so
-   it now matches --info instead of brand-dark, consistent with the
-   .on-chain-tag treatment in the split-and-settle flow */
 .me-on-chain {
   display: flex;
   align-items: center;
@@ -480,8 +434,8 @@
 }
 
 .me-on-chain-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--info);
   flex-shrink: 0;
@@ -495,8 +449,8 @@
     transform: scale(1);
   }
   50% {
-    opacity: 0.4;
-    transform: scale(0.8);
+    opacity: 0.3;
+    transform: scale(0.7);
   }
 }
 
@@ -516,40 +470,37 @@
   align-items: center;
   gap: 6px;
   background: var(--surface-elevated);
-  border: 1px solid rgba(186, 242, 74, 0.18);
-  border-radius: 6px;
-  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
   font-family: "DM Sans", sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: var(--ink);
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.2s ease;
 }
 
-/* selection UI (choosing a token) now uses secondary — kept
-   distinct from the status colors (success/warning/info) used
-   above, and from the brand-green primary action buttons */
 .me-token-select-trigger:hover:not(:disabled) {
-  background-color: var(--secondary-glow);
-  border-color: var(--secondary);
+  border-color: var(--brand);
+  background: var(--surface);
 }
 
 .me-token-select-trigger:focus {
   outline: none;
-  border-color: var(--secondary);
-  box-shadow: 0 0 0 3px var(--secondary-glow);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-glow);
 }
 
 .me-token-select-trigger:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .me-token-chevron {
   font-size: 10px;
   color: var(--ink-muted);
-  transition: transform 0.18s ease;
+  transition: transform 0.2s ease;
   margin-left: 2px;
 }
 
@@ -563,73 +514,77 @@
   left: 0;
   min-width: 100%;
   background: var(--surface);
-  border: 1px solid rgba(186, 242, 74, 0.14);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   z-index: 20;
+  min-width: 120px;
 }
 
 .me-token-option {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   font-family: "DM Sans", sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: var(--ink);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .me-token-option:hover {
-  background: var(--secondary-glow);
+  background: var(--brand-glow);
+  color: var(--brand);
 }
 
 .me-token-option--active {
-  background: var(--secondary-glow);
-  color: var(--secondary-light);
+  background: var(--brand-glow);
+  color: var(--brand);
   font-weight: 600;
 }
 
 .me-copy-btn {
   background: var(--brand);
-  border: 1px solid var(--brand);
-  border-radius: 6px;
-  padding: 4px 12px;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 16px;
   font-family: "DM Sans", sans-serif;
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--ink-dark);
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.2s ease;
 }
 
 .me-copy-btn:hover {
   background: var(--brand-light);
-  border-color: var(--brand-light);
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px var(--brand-glow);
 }
 
+/* --- States --- */
 .me-loading {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 60px 0;
+  padding: 80px 0;
   color: var(--ink-muted);
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .me-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(186, 242, 74, 0.18);
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border);
   border-top-color: var(--brand);
   border-radius: 50%;
-  animation: me-spin 0.7s linear infinite;
+  animation: me-spin 0.8s linear infinite;
 }
 
 @keyframes me-spin {
@@ -638,17 +593,14 @@
   }
 }
 
-/* now uses --danger instead of a hardcoded red (239,68,68) with a
-   hand-picked #ff8f8f text color — ties this error state to the
-   same semantic token used for "you owe" and everywhere else a
-   negative/failure state appears */
 .me-error {
   padding: 16px 20px;
-  background: rgba(251, 92, 92, 0.1);
-  border: 1px solid rgba(251, 92, 92, 0.24);
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
   border-radius: 10px;
   color: var(--danger);
   font-size: 13px;
+  font-weight: 400;
 }
 
 .me-empty {
@@ -656,143 +608,219 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 72px 0;
+  padding: 80px 0;
   text-align: center;
 }
 
-/* empty state now reads as a neutral/informational cyan tint
-   rather than a faded brand-green, so it doesn't look like a
-   washed-out version of the primary action color */
 .me-empty-icon {
-  font-size: 40px;
-  color: var(--tertiary-glow);
+  font-size: 48px;
+  color: var(--ink-muted);
   margin-bottom: 16px;
   line-height: 1;
+  opacity: 0.3;
 }
 
 .me-empty-title {
   font-family: "Syne", sans-serif;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 600;
   color: var(--ink);
   margin-bottom: 6px;
 }
 
 .me-empty-sub {
   font-size: 13px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--ink-muted);
-  max-width: 280px;
+  max-width: 320px;
 }
 
-@media (max-width: 700px) {
+/* --- Responsive --- */
+@media (max-width: 768px) {
   .me-inner {
-    padding: 40px 16px 60px;
+    padding: 32px 16px 60px;
   }
+
+  .me-heading {
+    font-size: 2rem;
+  }
+
+  .me-sub {
+    font-size: 0.95rem;
+    margin-bottom: 32px;
+  }
+
+  .me-stats-row {
+    gap: 24px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+  }
+
+  .me-stat-value {
+    font-size: 1.4rem;
+  }
+
   .me-card-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 14px;
+    gap: 12px;
+    padding: 14px 16px;
   }
+
   .me-card-left {
     width: 100%;
   }
+
   .me-card-right {
     justify-content: space-between;
     width: 100%;
     gap: 12px;
   }
+
   .me-amount-col {
     align-items: flex-start;
   }
-  .me-stats-row {
-    gap: 16px;
-    justify-content: space-between;
+
+  .me-filter-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding: 3px;
+    margin-bottom: 20px;
+    scrollbar-width: none;
   }
-  .me-stat {
-    flex: 1;
-    min-width: 45%;
+
+  .me-filter-tabs::-webkit-scrollbar {
+    display: none;
   }
+
+  .me-filter-tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 6px 16px;
+    font-size: 12px;
+  }
+
   .me-participant-row {
     justify-content: space-between;
     gap: 10px;
   }
+
   .me-p-info {
-    min-width: 120px;
+    min-width: 100px;
   }
+
   .me-footer-info {
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
+    gap: 14px;
   }
+
   .me-pay-row {
     width: 100%;
     justify-content: space-between;
-    gap: 10px;
+    gap: 8px;
   }
+
   .me-token-select-wrap {
     flex: 1;
   }
+
   .me-token-select-trigger {
     width: 100%;
     justify-content: space-between;
-    padding: 8px 12px;
   }
+
   .me-copy-btn {
     padding: 8px 16px;
+    width: auto;
   }
-  .me-filter-tabs {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 8px;
-    margin-bottom: 16px;
-    scrollbar-width: none;
-  }
-  .me-filter-tabs::-webkit-scrollbar {
-    display: none;
-  }
-  .me-filter-tab {
-    white-space: nowrap;
-    flex-shrink: 0;
-    padding: 8px 16px;
-  }
+
   .me-title {
     white-space: normal;
     word-break: break-word;
+  }
+
+  .me-card-body {
+    padding: 0 16px 16px;
   }
 }
 
 @media (max-width: 480px) {
   .me-heading {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
   }
-  .me-sub {
-    margin-bottom: 24px;
-  }
+
   .me-stat-value {
-    font-size: 1.15rem;
+    font-size: 1.2rem;
   }
+
+  .me-stats-row {
+    gap: 16px;
+  }
+
+  .me-stat {
+    flex: 1;
+    min-width: 40%;
+  }
+
   .me-card-header {
-    padding: 14px 16px;
+    padding: 12px 14px;
   }
-  .me-card-body {
-    padding: 0 16px 16px;
-  }
+
   .me-participant-row {
-    padding: 10px;
+    padding: 8px 12px;
   }
-  .me-p-info {
-    width: calc(100% - 42px);
-  }
+
   .me-p-amt {
-    text-align: left;
-  }
-  .me-badge {
-    padding: 3px 8px;
-    font-size: 10px;
-  }
-  .me-filter-tab {
-    padding: 6px 14px;
     font-size: 12px;
   }
+
+  .me-badge {
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+
+  .me-filter-tab {
+    padding: 4px 12px;
+    font-size: 11px;
+  }
+
+  .me-cat-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+  }
+
+  .me-amount {
+    font-size: 0.95rem;
+  }
+}
+
+/* ===== Premium Minimal v2 Overrides ===== */
+.me-card {
+  border-radius: 22px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.01)
+  );
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+.me-card:hover {
+  transform: translateY(-6px);
+}
+.me-filter-tabs {
+  border-radius: 16px;
+  backdrop-filter: blur(18px);
+}
+.me-filter-tab--active {
+  border-radius: 12px;
+}
+.me-copy-btn,
+.me-token-select-trigger {
+  border-radius: 12px;
+}
+.me-heading {
+  font-weight: 800;
+  letter-spacing: -0.05em;
 }

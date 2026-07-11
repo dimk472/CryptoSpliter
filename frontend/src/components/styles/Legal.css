@@ -1,4 +1,4 @@
-/* legal-shared.css - Minimal Neutral Theme */
+/* legal-shared.css - Minimal Theme using new palette */
 
 * {
   margin: 0;
@@ -29,9 +29,7 @@
 
 .legal-wrap {
   position: relative;
-  background:
-    radial-gradient(circle at top left, rgba(1, 51, 48, 0.35), transparent 28%),
-    linear-gradient(180deg, #131416 0%, #101113 100%);
+  background: var(--bg);
   min-height: 100vh;
 }
 
@@ -41,8 +39,8 @@
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(186, 242, 74, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(186, 242, 74, 0.04) 1px, transparent 1px);
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 40px 40px;
   z-index: 0;
 }
@@ -91,15 +89,15 @@
   align-items: flex-start;
   gap: 12px;
   padding: 20px 24px;
-  background: rgba(1, 51, 48, 0.34);
-  border: 1px solid rgba(186, 242, 74, 0.14);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   border-radius: 12px;
   margin-bottom: 48px;
 }
 
 .legal-highlight--warn {
-  background: rgba(1, 51, 48, 0.3);
-  border-color: rgba(186, 242, 74, 0.14);
+  background: var(--surface-soft);
+  border-color: var(--border);
 }
 
 .legal-highlight-icon {
@@ -129,7 +127,7 @@
 
 .legal-section {
   padding: 32px 0;
-  border-bottom: 1px solid rgba(186, 242, 74, 0.08);
+  border-bottom: 1px solid var(--border);
 }
 
 .legal-section:last-child {
@@ -139,7 +137,7 @@
 
 .legal-section--warning {
   padding-left: 20px;
-  border-left: 2px solid rgba(186, 242, 74, 0.24);
+  border-left: 2px solid var(--brand-glow);
   margin-left: -20px;
 }
 
@@ -178,7 +176,8 @@
   font-size: 11px;
   font-weight: 500;
   color: var(--brand);
-  background: rgba(1, 51, 48, 0.34);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px 14px;
   line-height: 1.5;
@@ -217,7 +216,7 @@
 .legal-footer {
   margin-top: 60px;
   padding-top: 24px;
-  border-top: 1px solid rgba(186, 242, 74, 0.08);
+  border-top: 1px solid var(--border);
   text-align: center;
   font-size: 12px;
   font-weight: 300;

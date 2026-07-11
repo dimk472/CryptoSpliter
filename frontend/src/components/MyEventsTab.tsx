@@ -257,7 +257,6 @@ function EventCard({
                                 <div key={i} className="me-participant-row">
                                     <div
                                         className="me-p-avatar"
-                                        style={{ background: i % 4 === 0 ? '#baf24a' : '#013330' }}
                                     >
                                         {p.name ? p.name[0].toUpperCase() : '?'}
                                     </div>
