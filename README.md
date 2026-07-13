@@ -4,33 +4,21 @@
 
 🌐 **Live Demo:** https://cryptosplitter.app/
 
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+<img width="1868" height="858" alt="image" src="https://github.com/user-attachments/assets/38930649-ad73-41a1-9dfb-6c81e0e50758" />
 
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+<img width="1867" height="715" alt="image" src="https://github.com/user-attachments/assets/cebe359b-bc48-493d-91ab-5e8a6114230f" />
 
-![Solidity](https://img.shields.io/badge/Solidity-0.8-363636?logo=solidity)
+<img width="1842" height="682" alt="image" src="https://github.com/user-attachments/assets/f62aaf33-d57d-4fd9-967d-0b256d6b3592" />
 
-![Foundry](https://img.shields.io/badge/Foundry-Smart%20Contracts-orange)
+<img width="1853" height="677" alt="image" src="https://github.com/user-attachments/assets/dee97fbb-3bf3-4b4e-b050-3b45ea9d0bc6" />
 
-![Chainlink](https://img.shields.io/badge/Chainlink-Price%20Feeds-375BD2)
+<img width="641" height="753" alt="image" src="https://github.com/user-attachments/assets/43d6b137-ca6f-4370-81e9-58ba24b945a9" />
 
-![Sepolia](https://img.shields.io/badge/Network-Sepolia-green)
+<img width="1843" height="576" alt="image" src="https://github.com/user-attachments/assets/9a2d9b18-2e1b-4cd7-ad26-5f2bf5c250f2" />
 
-![ETH](https://img.shields.io/badge/Payments-ETH-blue)
+<img width="1868" height="551" alt="image" src="https://github.com/user-attachments/assets/f9dc9d95-e991-4366-9153-e68f7a510c5c" />
 
-![LINK](https://img.shields.io/badge/Payments-LINK-2A5ADA)
-
-<img width="1868" height="845" alt="image" src="https://github.com/user-attachments/assets/05ebf853-8b90-4a3e-bd83-cadff54e1991" />
-
-<img width="1840" height="737" alt="image" src="https://github.com/user-attachments/assets/7cc0100f-90cd-4a50-b606-6956ee8f76bc" />
-
-<img width="1813" height="672" alt="image" src="https://github.com/user-attachments/assets/df1e3b10-c736-44c5-9e74-732e7c863b6b" />
-
-<img width="567" height="662" alt="image" src="https://github.com/user-attachments/assets/8f58a462-17ed-457e-9ed0-c9c4dce687b7" />
-
-<img width="1796" height="447" alt="image" src="https://github.com/user-attachments/assets/7e239f15-a21c-49bb-b930-94a46435060f" />
-
-<img width="1853" height="438" alt="image" src="https://github.com/user-attachments/assets/f40560b4-81f9-450e-9665-3d52a6e634aa" />
+<img width="1855" height="590" alt="image" src="https://github.com/user-attachments/assets/6df0ee3f-4db4-4d6d-953c-7e53737cb09c" />
 
 ---
 
