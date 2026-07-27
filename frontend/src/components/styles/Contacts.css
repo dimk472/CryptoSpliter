@@ -1,0 +1,287 @@
+/* ==================== Contacts: shared avatar bits ==================== */
+
+.contact-avatar-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.contact-avatar-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1d2127;
+  color: #baf24a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* ==================== Contact picker (per participant row) ==================== */
+
+.contact-picker {
+  position: relative;
+  display: inline-flex;
+}
+
+.contact-picker-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #d8ff7a;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.contact-picker-btn:hover {
+  background: rgba(186, 242, 74, 0.1);
+  border-color: rgba(186, 242, 74, 0.4);
+}
+
+.contact-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #1d2127;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+  z-index: 40;
+  padding: 6px;
+}
+
+.contact-picker-empty {
+  padding: 10px 8px;
+  font-size: 12px;
+  color: #95a09a;
+  text-align: center;
+}
+
+.contact-picker-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.contact-picker-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.contact-picker-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.contact-picker-item-name {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contact-picker-item-addr {
+  font-size: 11px;
+  color: #95a09a;
+}
+
+/* ==================== Contacts manager modal ==================== */
+
+.contacts-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.contacts-modal {
+  width: 100%;
+  max-width: 460px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #1d2127;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.contacts-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.contacts-modal-header h3 {
+  color: #ffffff;
+  font-size: 16px;
+  margin: 0;
+}
+
+.contacts-modal-close {
+  background: transparent;
+  border: none;
+  color: #95a09a;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.contacts-modal-close:hover {
+  color: #ffffff;
+}
+
+.contacts-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.contacts-photo-upload {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.contacts-photo-placeholder {
+  color: #baf24a;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.contacts-photo-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.contacts-form-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.contacts-form-error {
+  color: #ff8a8a;
+  font-size: 12px;
+  margin: 4px 0 10px;
+}
+
+.contacts-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.contacts-list {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contacts-empty {
+  color: #95a09a;
+  font-size: 12px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.contacts-list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  border-radius: 8px;
+}
+
+.contacts-list-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.contacts-list-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.contacts-list-name {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.contacts-list-addr {
+  font-size: 11px;
+  color: #95a09a;
+}
+
+.contacts-list-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.contacts-icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #d8ff7a;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contacts-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.contacts-icon-btn--danger {
+  color: #ff8a8a;
+}

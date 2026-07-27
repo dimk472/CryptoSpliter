@@ -40,6 +40,10 @@ import '../components/styles/CryptoSpliter.css'
 import '../components/styles/splitingApp.css'
 import { parseEther } from "ethers"
 import LoadingEffect from './loadingEffect/LoadingEffect.tsx';
+import { useContacts } from './contacts/useContacts';
+import ContactPicker, { ContactAvatar } from './contacts/ContactPicker';
+import ContactsManager from './contacts/ContactsManager';
+import '../components/styles/contacts.css';
 
 const COLORS = ['#baf24a', '#013330', '#d8ff7a', '#1d2127', '#95a09a', '#8fb92f'];
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
@@ -125,6 +129,9 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
     const [blockNumber, setBlockNumber] = useState<number | null>(null);
     const [txHash, setTxHash] = useState<string>('');
     const [isConfirming, setIsConfirming] = useState(false);
+    const { contacts, saveContact, deleteContact } = useContacts(walletAddress);
+    const [managerOpen, setManagerOpen] = useState(false);
+    const [managerDraft, setManagerDraft] = useState<{ name?: string; address?: string } | null>(null);
 
     // Custom per-participant amounts, keyed by participant id (0..participantCount-1).
     // Defaults to an equal split of the total amount; can be adjusted manually in Step 3
@@ -606,6 +613,29 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
                                             onChange={(e) => updateParticipant(participant.id, 'address', e.target.value)}
                                         />
                                         {participant.isYou && <span className="p-you-tag">You</span>}
+
+                                        {!participant.isYou && (
+                                            <ContactPicker
+                                                contacts={contacts}
+                                                onSelect={(c) => {
+                                                    updateParticipant(participant.id, 'name', c.name);
+                                                    updateParticipant(participant.id, 'address', c.address);
+                                                }}
+                                            />
+                                        )}
+
+                                        {!participant.isYou && participant.name.trim() && participant.address.trim() && (
+
+                                            <button
+                                                type="button"
+                                                className="contact-picker-btn"
+                                                title="Save as contact"
+                                                onClick={() => { setManagerDraft({ name: participant.name, address: participant.address }); setManagerOpen(true); }}
+                                            >
+                                                💾
+                                            </button>
+                                        )}
+
                                     </div>
                                 ))}
                             </div>
@@ -793,6 +823,15 @@ function SplittingApp({ walletAddress }: { walletAddress: string }) {
 
                 </div>
             </div>
+            {managerOpen && (
+                <ContactsManager
+                    contacts={contacts}
+                    onSave={saveContact}
+                    onDelete={deleteContact}
+                    onClose={() => setManagerOpen(false)}
+                    initialDraft={managerDraft}
+                />
+            )}
         </div>
     );
 }

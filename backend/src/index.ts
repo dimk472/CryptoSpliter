@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import eventsRouter from "./routes/events";
+import eventsRouter, { contactsRouter } from "./routes/events";
 
 dotenv.config();
 
@@ -20,13 +20,16 @@ app.use(
   }),
 );
 
-app.use(express.json());
+// ✅ Ανεβάσαμε το limit από το default (100kb) σε 2mb, γιατί οι επαφές
+// στέλνουν τη φωτογραφία προφίλ σαν base64 data URL μέσα στο JSON body.
+app.use(express.json({ limit: "2mb" }));
 
 app.get("/", (req, res) => {
   res.send("CryptoSplitter backend running 🚀");
 });
 
 app.use("/events", eventsRouter);
+app.use("/contacts", contactsRouter);
 
 const PORT = process.env.PORT || 3000;
 

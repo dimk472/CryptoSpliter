@@ -345,3 +345,241 @@ router.post("/:eventId/pay", async (req, res) => {
 });
 
 export default router;
+
+// ==========================================================================
+// CONTACTS ROUTES
+// ==========================================================================
+// Separate router so it can be mounted at its own base path, e.g.:
+//
+//   import eventsRouter, { contactsRouter } from "./events"; // this file
+//   app.use("/events", eventsRouter);
+//   app.use("/contacts", contactsRouter);
+//
+// Table (Supabase / Postgres):
+//
+//   create table contacts (
+//     id uuid primary key default gen_random_uuid(),
+//     owner_wallet varchar(42) not null,
+//     name varchar(100) not null,
+//     address varchar(42) not null,
+//     photo text,
+//     created_at timestamp default now(),
+//     updated_at timestamp default now(),
+//     unique (owner_wallet, address)
+//   );
+//
+//   create index idx_contacts_owner_wallet on contacts (owner_wallet);
+
+export const contactsRouter = Router();
+
+function isValidWallet(value: unknown): value is string {
+  return (
+    typeof value === "string" && value.trim().toLowerCase().startsWith("0x")
+  );
+}
+
+// GET /contacts?wallet=0x...
+contactsRouter.get("/", async (req, res) => {
+  try {
+    const ownerWallet = String(req.query.wallet ?? "")
+      .trim()
+      .toLowerCase();
+
+    if (!ownerWallet) {
+      return res.status(400).json({ error: "Missing wallet query parameter" });
+    }
+
+    const { data, error } = await supabase
+      .from("contacts")
+      .select("id, name, address, photo")
+      .ilike("owner_wallet", ownerWallet)
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("CONTACTS FETCH ERROR:", error);
+      return res.status(500).json({
+        error: "Failed to fetch contacts",
+        details: error.message,
+      });
+    }
+
+    return res.json(data ?? []);
+  } catch (err) {
+    console.error("CONTACTS GET FATAL ERROR:", err);
+    return res.status(500).json({
+      error: "Server crashed",
+      details: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
+});
+
+// POST /contacts
+// body: { owner_wallet, name, address, photo? }
+contactsRouter.post("/", async (req, res) => {
+  try {
+    const { owner_wallet, name, address, photo } = req.body ?? {};
+
+    const normalizedOwnerWallet = String(owner_wallet ?? "")
+      .trim()
+      .toLowerCase();
+    const normalizedAddress = String(address ?? "")
+      .trim()
+      .toLowerCase();
+    const trimmedName = String(name ?? "").trim();
+
+    if (!isValidWallet(normalizedOwnerWallet)) {
+      return res
+        .status(400)
+        .json({ error: "A valid owner_wallet is required" });
+    }
+    if (!trimmedName) {
+      return res.status(400).json({ error: "A name is required" });
+    }
+    if (!isValidWallet(normalizedAddress)) {
+      return res
+        .status(400)
+        .json({ error: "A valid contact address is required" });
+    }
+
+    // ✅ upsert με βάση (owner_wallet, address): αν υπάρχει ήδη η επαφή, ενημερώνεται
+    const { data, error } = await supabase
+      .from("contacts")
+      .upsert(
+        [
+          {
+            owner_wallet: normalizedOwnerWallet,
+            name: trimmedName,
+            address: normalizedAddress,
+            photo: photo ?? null,
+            updated_at: new Date().toISOString(),
+          },
+        ],
+        { onConflict: "owner_wallet,address" },
+      )
+      .select("id, name, address, photo")
+      .single();
+
+    if (error || !data) {
+      console.error("CONTACT UPSERT ERROR:", error);
+      return res.status(500).json({
+        error: "Failed to save contact",
+        details: error?.message,
+      });
+    }
+
+    return res.status(201).json(data);
+  } catch (err) {
+    console.error("CONTACTS POST FATAL ERROR:", err);
+    return res.status(500).json({
+      error: "Server crashed",
+      details: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
+});
+
+// PUT /contacts/:id
+// body: { owner_wallet, name, address, photo? }
+contactsRouter.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { owner_wallet, name, address, photo } = req.body ?? {};
+
+    const normalizedOwnerWallet = String(owner_wallet ?? "")
+      .trim()
+      .toLowerCase();
+    const normalizedAddress = String(address ?? "")
+      .trim()
+      .toLowerCase();
+    const trimmedName = String(name ?? "").trim();
+
+    if (!isValidWallet(normalizedOwnerWallet)) {
+      return res
+        .status(400)
+        .json({ error: "A valid owner_wallet is required" });
+    }
+    if (!trimmedName) {
+      return res.status(400).json({ error: "A name is required" });
+    }
+    if (!isValidWallet(normalizedAddress)) {
+      return res
+        .status(400)
+        .json({ error: "A valid contact address is required" });
+    }
+
+    const { data, error } = await supabase
+      .from("contacts")
+      .update({
+        name: trimmedName,
+        address: normalizedAddress,
+        photo: photo ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .ilike("owner_wallet", normalizedOwnerWallet)
+      .select("id, name, address, photo")
+      .maybeSingle();
+
+    if (error) {
+      console.error("CONTACT UPDATE ERROR:", error);
+      return res.status(500).json({
+        error: "Failed to update contact",
+        details: error.message,
+      });
+    }
+
+    if (!data) {
+      return res.status(404).json({ error: "Contact not found" });
+    }
+
+    return res.json(data);
+  } catch (err) {
+    console.error("CONTACTS PUT FATAL ERROR:", err);
+    return res.status(500).json({
+      error: "Server crashed",
+      details: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
+});
+
+// DELETE /contacts/:id?wallet=0x...
+contactsRouter.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ownerWallet = String(req.query.wallet ?? "")
+      .trim()
+      .toLowerCase();
+
+    if (!isValidWallet(ownerWallet)) {
+      return res
+        .status(400)
+        .json({ error: "A valid wallet query parameter is required" });
+    }
+
+    const { data, error } = await supabase
+      .from("contacts")
+      .delete()
+      .eq("id", id)
+      .ilike("owner_wallet", ownerWallet)
+      .select("id");
+
+    if (error) {
+      console.error("CONTACT DELETE ERROR:", error);
+      return res.status(500).json({
+        error: "Failed to delete contact",
+        details: error.message,
+      });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: "Contact not found" });
+    }
+
+    return res.status(204).send();
+  } catch (err) {
+    console.error("CONTACTS DELETE FATAL ERROR:", err);
+    return res.status(500).json({
+      error: "Server crashed",
+      details: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
+});
