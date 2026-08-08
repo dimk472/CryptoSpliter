@@ -703,15 +703,18 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-top: 32px;
+  margin-right: 50px;
   position: relative;
-  width: 100%;
-  margin-top: 16px;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 @media (min-width: 900px) {
   .hero-right {
-    margin-top: 0;
+    margin-top: 32px;
     width: auto;
+    overflow: visible;
   }
 }
 
@@ -749,21 +752,30 @@ body {
 }
 
 @media (max-width: 540px) {
+  .hero-inner {
+    padding-inline: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
   .hero-title {
-    font-size: clamp(2rem, 8.5vw, 2.6rem);
+    font-size: clamp(1.8rem, 7.5vw, 2.5rem);
     line-height: 1.15;
     letter-spacing: -0.03em;
+    color: #ffffff !important;
   }
 
   .hero-desc {
-    font-size: 0.95rem;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.92rem;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.85) !important;
   }
 
   .hero-eyebrow {
     gap: 8px;
     font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.85) !important;
   }
 
   .hero-eyebrow .chain-icon {
@@ -776,7 +788,7 @@ body {
     align-items: stretch;
     gap: 12px;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 12px;
   }
 
   .hero-actions .custom-connect-btn {
@@ -786,29 +798,36 @@ body {
     font-weight: 600 !important;
     border-radius: 12px !important;
     justify-content: center !important;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+    background: var(--brand) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35) !important;
+  }
+
+  .hero-actions .custom-connect-btn * {
+    color: #ffffff !important;
+    font-weight: 600 !important;
   }
 
   .hero-cta-secondary {
-    width: 100%;
-    height: 46px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.08);
-    font-size: 14px;
-    font-weight: 500;
-    color: #ffffff;
-    text-decoration: none;
-    transition: all 0.2s ease;
+    width: 100% !important;
+    height: 46px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    box-sizing: border-box !important;
   }
 
   .hero-cta-secondary:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
   }
 
   .hero-meta {
@@ -816,6 +835,7 @@ body {
     line-height: 1.4;
     text-align: center;
     width: 100%;
+    color: rgba(255, 255, 255, 0.6) !important;
   }
 }
 
