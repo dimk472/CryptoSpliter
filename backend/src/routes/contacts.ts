@@ -18,7 +18,7 @@ contactsRouter.get("/", async (req, res) => {
 
     // Fetch contacts
     const { data: contacts, error: contactsError } = await supabase
-      .from("contacts_v2")
+      .from("contacts")
       .select("id, owner_wallet, name, photo, created_at, updated_at")
       .ilike("owner_wallet", ownerWallet)
       .order("name", { ascending: true });
@@ -100,7 +100,7 @@ contactsRouter.post("/", async (req, res) => {
 
     // Insert contact
     const { data: contact, error: contactError } = await supabase
-      .from("contacts_v2")
+      .from("contacts")
       .insert([
         {
           owner_wallet: normalizedOwnerWallet,
@@ -138,7 +138,7 @@ contactsRouter.post("/", async (req, res) => {
     if (addrError) {
       console.error("ADDRESS INSERT ERROR:", addrError);
       // Cleanup: delete the contact if addresses failed
-      await supabase.from("contacts_v2").delete().eq("id", contact.id);
+      await supabase.from("contacts").delete().eq("id", contact.id);
       return res.status(500).json({
         error: "Failed to save contact addresses",
         details: addrError.message,
@@ -177,7 +177,7 @@ contactsRouter.put("/:id", async (req, res) => {
 
     // Update contact
     const { error: updateError } = await supabase
-      .from("contacts_v2")
+      .from("contacts")
       .update({
         name: trimmedName,
         photo: photo || null,
@@ -248,7 +248,7 @@ contactsRouter.delete("/:id", async (req, res) => {
 
     // Addresses will be cascade-deleted
     const { data, error } = await supabase
-      .from("contacts_v2")
+      .from("contacts")
       .delete()
       .eq("id", id)
       .ilike("owner_wallet", ownerWallet)

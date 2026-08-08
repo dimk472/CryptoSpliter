@@ -1,7 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import eventsRouter, { contactsRouter } from "./routes/events";
+import eventsRouter from "./routes/events";
+import { contactsRouter } from "./routes/contacts";
 
 dotenv.config();
 
