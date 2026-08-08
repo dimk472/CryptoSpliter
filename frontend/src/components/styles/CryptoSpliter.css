@@ -703,13 +703,14 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 32px;
-  margin-right: 50px;
+  position: relative;
+  width: 100%;
+  margin-top: 16px;
 }
 
 @media (min-width: 900px) {
   .hero-right {
-    margin-top: 32px;
+    margin-top: 0;
     width: auto;
   }
 }
@@ -744,6 +745,77 @@ body {
     height: auto;
     margin-left: -250px;
     margin-top: 33px;
+  }
+}
+
+@media (max-width: 540px) {
+  .hero-title {
+    font-size: clamp(2rem, 8.5vw, 2.6rem);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+  }
+
+  .hero-desc {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  .hero-eyebrow {
+    gap: 8px;
+    font-size: 0.85rem;
+  }
+
+  .hero-eyebrow .chain-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .hero-actions .custom-connect-btn {
+    width: 100% !important;
+    height: 48px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    border-radius: 12px !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+  }
+
+  .hero-cta-secondary {
+    width: 100%;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .hero-cta-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+
+  .hero-meta {
+    font-size: 10px;
+    line-height: 1.4;
+    text-align: center;
+    width: 100%;
   }
 }
 
