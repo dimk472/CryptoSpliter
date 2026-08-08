@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import './styles/MyEventsTab.css';
-import { prepareContractCall, sendTransaction, waitForReceipt, readContract } from "thirdweb";
+import '../styles/MyEventsTab.css';
+import { useScrollReveal } from '../../utils/useScrollReveal';
+import { prepareContractCall, sendTransaction, waitForReceipt, readContract, getContract } from "thirdweb";
 import { useActiveWalletChain, useActiveAccount } from "thirdweb/react";
 import { ethereum, sepolia, polygon, arbitrum, optimism, base, avalanche, bsc, linea, scroll } from "thirdweb/chains";
-import { client } from "../ThirdwebClient";
-import { getEventContract } from "../blokchain/contract";
+import { client } from "../../ThirdwebClient";
+import { getEventContract } from "../../blockchain/contract";
 import { Building2, Plane, UtensilsCrossed, Car, Zap, Package, Inbox, Search } from 'lucide-react';
 import { TokenIcon } from '@web3icons/react/dynamic';
-import { getContract } from "thirdweb";
-
+import { getTokensForChain, getDefaultToken, findToken, type TokenConfig } from "../../blockchain/TokenModals";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,23 +39,17 @@ type SplitEvent = {
     participants: EventParticipant[];
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-const TOKENS = {
-    ETH: { label: 'ETH', symbol: 'eth' },
-    LINK: { label: 'LINK', symbol: 'link' },
-} as const;
-
-type TokenKey = keyof typeof TOKENS;
+// ─── TokenSelect ──────────────────────────────────────────────────────────────
 
 function TokenSelect({
+    tokens,
     value,
     onChange,
     disabled,
 }: {
-    value: TokenKey;
-    onChange: (v: TokenKey) => void;
+    tokens: TokenConfig[];
+    value: TokenConfig;
+    onChange: (v: TokenConfig) => void;
     disabled?: boolean;
 }) {
     const [open, setOpen] = useState(false);
@@ -71,6 +65,8 @@ function TokenSelect({
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
+    if (tokens.length === 0) return null;
+
     return (
         <div className="me-token-select-wrap" ref={ref}>
             <button
@@ -79,24 +75,24 @@ function TokenSelect({
                 onClick={() => !disabled && setOpen((o) => !o)}
                 disabled={disabled}
             >
-                <TokenIcon symbol={TOKENS[value].symbol} size={16} variant="branded" />
-                <span>{TOKENS[value].label}</span>
+                <TokenIcon symbol={value.symbol.toLowerCase()} size={16} variant="branded" />
+                <span>{value.symbol}</span>
                 <span className={`me-token-chevron ${open ? 'me-token-chevron--open' : ''}`}>▾</span>
             </button>
 
             {open && (
                 <div className="me-token-menu">
-                    {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
+                    {tokens.map((t) => (
                         <div
-                            key={key}
-                            className={`me-token-option ${key === value ? 'me-token-option--active' : ''}`}
+                            key={t.symbol}
+                            className={`me-token-option ${t.symbol === value.symbol ? 'me-token-option--active' : ''}`}
                             onClick={() => {
-                                onChange(key);
+                                onChange(t);
                                 setOpen(false);
                             }}
                         >
-                            <TokenIcon symbol={TOKENS[key].symbol} size={16} variant="branded" />
-                            <span>{TOKENS[key].label}</span>
+                            <TokenIcon symbol={t.symbol.toLowerCase()} size={16} variant="branded" />
+                            <span>{t.symbol}</span>
                         </div>
                     ))}
                 </div>
@@ -117,12 +113,12 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const SUPPORTED_CHAINS = [
+    base,
     ethereum,
     sepolia,
     polygon,
     arbitrum,
     optimism,
-    base,
     avalanche,
     bsc,
     linea,
@@ -170,22 +166,21 @@ function EventCard({
     onPay,
     paying,
     currencySymbol,
+    activeChainId,
 }: {
     event: SplitEvent;
     onExpand: () => void;
     expanded: boolean;
     walletAddress: string;
-    onPay: (eventId: string, token: 'ETH' | 'LINK') => void;
+    onPay: (eventId: string, token: TokenConfig) => void;
     paying: boolean;
     currencySymbol: string | undefined;
+    activeChainId?: number;
 }) {
     const amt = parseFloat(event.total_amount) || 0;
     const debtors = event.participants.filter(p => !p.is_owner);
     const perPersonEqual = event.participants.length > 0 ? amt / event.participants.length : 0;
 
-    // If any participant's real debt (from the debts table) differs from an
-    // equal share, this event has a custom split — used purely to label the
-    // summary line correctly ("avg" vs a flat per-person amount).
     const isCustomSplit = event.participants.some(
         p => Math.abs(getParticipantAmount(event, p) - perPersonEqual) > 0.01
     );
@@ -194,7 +189,12 @@ function EventCard({
     const paidCount = debtors.filter(p => p.paid).length;
     const icon = CATEGORY_ICONS[event.category] || '📦';
     const normalizedWallet = walletAddress.toLowerCase();
-    const [selectedToken, setSelectedToken] = useState<'ETH' | 'LINK'>('ETH');
+
+    // Tokens supported for THIS event's chain — not a global constant
+    const availableTokens = getTokensForChain(event.chain_id);
+    const [selectedToken, setSelectedToken] = useState<TokenConfig | undefined>(
+        () => getDefaultToken(event.chain_id)
+    );
 
     const eventId = event.off_chain_id;
 
@@ -255,9 +255,7 @@ function EventCard({
 
                             return (
                                 <div key={i} className="me-participant-row">
-                                    <div
-                                        className="me-p-avatar"
-                                    >
+                                    <div className="me-p-avatar">
                                         {p.name ? p.name[0].toUpperCase() : '?'}
                                     </div>
 
@@ -277,17 +275,43 @@ function EventCard({
                                     </span>
 
                                     {!p.paid && p.address.toLowerCase() === normalizedWallet && (
-                                        <div className="me-pay-row">
-                                            <TokenSelect value={selectedToken} onChange={setSelectedToken} disabled={paying} />
+                                        availableTokens.length === 0 ? (
+                                            <span className="me-p-status">
+                                                Payment unavailable on this network
+                                            </span>
+                                        ) : (
+                                            <div className="me-pay-row">
+                                                <TokenSelect
+                                                    tokens={availableTokens}
+                                                    value={selectedToken ?? availableTokens[0]}
+                                                    onChange={setSelectedToken}
+                                                    disabled={paying}
+                                                />
+                                                <button
+                                                    className="me-copy-btn"
+                                                    onClick={() => {
+                                                        if (!activeChainId) {
+                                                            alert("Please connect your wallet.");
+                                                            return;
+                                                        }
 
-                                            <button
-                                                className="me-copy-btn"
-                                                onClick={() => onPay(eventId, selectedToken)}
-                                                disabled={paying}
-                                            >
-                                                {paying ? 'Paying...' : 'Pay now'}
-                                            </button>
-                                        </div>
+                                                        if (event.chain_id !== activeChainId) {
+                                                            alert(
+                                                                `Wrong network. Please switch to the ${SUPPORTED_CHAINS.find(
+                                                                    c => c.id === event.chain_id
+                                                                )?.name} network.`
+                                                            );
+                                                            return;
+                                                        }
+
+                                                        selectedToken && onPay(eventId, selectedToken);
+                                                    }}
+                                                    disabled={paying || !selectedToken}
+                                                >
+                                                    {paying ? 'Paying...' : 'Pay now'}
+                                                </button>
+                                            </div>
+                                        )
                                     )}
                                 </div>
                             );
@@ -308,6 +332,7 @@ function EventCard({
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 function MyEvents({ walletAddress }: { walletAddress: string }) {
+    const { ref, isVisible } = useScrollReveal();
     const [events, setEvents] = useState<SplitEvent[]>([]);
     const [loadedWalletAddress, setLoadedWalletAddress] = useState('');
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -363,7 +388,7 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
     });
 
     // ── Payment handler ────────────────────────────────────────────────────────
-    const markPaid = async (eventId: string, token: 'ETH' | 'LINK') => {
+    const markPaid = async (eventId: string, token: TokenConfig) => {
         try {
             setPayingEventId(eventId);
 
@@ -380,53 +405,49 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                 throw new Error(`Please switch your wallet to ${paymentChain.name} before paying this event.`);
             }
 
+            // Guard: make sure the token actually belongs to this chain's config
+            // (defensive check in case selectedToken was set before a chain switch)
+            const resolvedToken = findToken(event.chain_id, token.symbol) ?? token;
+
             const offChainIdBytes32 = event.off_chain_id as `0x${string}`;
             const payerAddress = walletAddress as `0x${string}`;
+            const eventContract = getEventContract(paymentChain);
 
-            const LINK_ADDRESS = "0x779877A7B0D9E8603169DdbD7836e478b4624789";
-            const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
+            const shareAmount = await readContract({
+                contract: eventContract,
+                method: "getSharedPriceInToken",
+                params: [offChainIdBytes32, payerAddress, resolvedToken.address],
+            });
+
             let tx;
 
-            if (token === 'LINK') {
-                // getSharedPriceInToken now requires the participant address, since
-                // each participant can owe a different (custom-split) share.
-                const shareAmountToken = await readContract({
-                    contract: getEventContract(paymentChain),
-                    method: "getSharedPriceInToken",
-                    params: [offChainIdBytes32, payerAddress, LINK_ADDRESS],
+            if (resolvedToken.native) {
+                tx = prepareContractCall({
+                    contract: eventContract,
+                    method: "paymentInEth",
+                    params: [offChainIdBytes32],
+                    value: shareAmount,
                 });
-                const linkContract = getContract({
+            } else {
+                const tokenContract = getContract({
                     client,
                     chain: paymentChain,
-                    address: LINK_ADDRESS,
+                    address: resolvedToken.address,
                 });
 
                 const approveTx = prepareContractCall({
-                    contract: linkContract,
+                    contract: tokenContract,
                     method: "function approve(address spender, uint256 amount) returns (bool)",
-                    params: [getEventContract(paymentChain).address, shareAmountToken],
+                    params: [eventContract.address, shareAmount],
                 });
 
                 const approveRes = await sendTransaction({ transaction: approveTx, account: liveAccount });
                 await waitForReceipt({ client, chain: paymentChain, transactionHash: approveRes.transactionHash });
 
                 tx = prepareContractCall({
-                    contract: getEventContract(paymentChain),
+                    contract: eventContract,
                     method: "paymentInToken",
-                    params: [offChainIdBytes32, LINK_ADDRESS, shareAmountToken],
-                });
-            } else {
-                const shareAmount = await readContract({
-                    contract: getEventContract(paymentChain),
-                    method: "getSharedPriceInToken",
-                    params: [offChainIdBytes32, payerAddress, ETH_ADDRESS],
-                });
-
-                tx = prepareContractCall({
-                    contract: getEventContract(paymentChain),
-                    method: "paymentInEth",
-                    params: [offChainIdBytes32],
-                    value: shareAmount,
+                    params: [offChainIdBytes32, resolvedToken.address, shareAmount],
                 });
             }
 
@@ -434,7 +455,6 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                 transaction: tx,
                 account: liveAccount,
             });
-
 
             await waitForReceipt({
                 client,
@@ -475,10 +495,10 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
             );
 
         } catch (err: any) {
-            // 1. Logs the expandable, inspectable object to the console
             console.error("❌ Deep Payment Error Details:", err);
-
-            // 2. Extracts inner contract revert messages if they exist
+            console.error("message:", err?.message);
+            console.error("cause:", err?.cause);
+            console.error("stack:", err?.stack);
             const dynamicMessage = err?.message || err?.reason || "Unknown payment error";
             alert(`Payment failed: ${dynamicMessage}`);
         } finally {
@@ -487,10 +507,9 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
     };
 
     return (
-        <div className="me-wrap" id="my-events">
+        <div className={`me-wrap reveal-on-scroll${isVisible ? ' is-visible' : ''}`} id="my-events" ref={ref}>
             <div className="me-inner">
 
-                {/* ── Stats + Filters (only when data is loaded) ── */}
                 {!loading && events.length > 0 && (
                     <>
                         <div className="me-stats-row">
@@ -534,7 +553,6 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                     </>
                 )}
 
-                {/* ── Content ── */}
                 {loading ? (
                     <p style={{ textAlign: 'center', color: 'var(--ink-muted)', padding: '2rem' }}>
                         Loading your events…
@@ -569,6 +587,7 @@ function MyEvents({ walletAddress }: { walletAddress: string }) {
                                 onPay={markPaid}
                                 paying={payingEventId === ev.off_chain_id}
                                 currencySymbol={ev.currency}
+                                activeChainId={activeChain?.id}
                             />
                         ))}
                     </div>

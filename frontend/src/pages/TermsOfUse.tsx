@@ -1,4 +1,7 @@
-import './styles/Legal.css';
+import { Link } from 'react-router-dom';
+import SeoHead from '../components/seo/SeoHead';
+import { TERMS_SEO } from '../seo/seoConfig.ts';
+import '../components/styles/Legal.css';
 
 const BRAND = 'CryptoSplitter';
 const DATE = 'May 2025';
@@ -175,17 +178,15 @@ const sections: Section[] = [
 ];
 
 function TermsOfUse() {
-    const handleBack = () => {
-        window.location.href = '/';
-    };
-
     return (
-        <div className="legal-wrap">
+        <>
+            <SeoHead {...TERMS_SEO} />
+            <div className="legal-wrap">
             <div className="legal-inner">
 
-                <button className="legal-back-btn" onClick={handleBack}>
+                <Link className="legal-back-btn" to="/">
                     ← Back
-                </button>
+                </Link>
 
                 <div className="legal-header">
                     <span className="legal-tag">Legal</span>
@@ -230,6 +231,7 @@ function TermsOfUse() {
                 </div>
             </div>
         </div>
+        </>
     );
 }
 

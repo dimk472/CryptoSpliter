@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
+# Static legal pages
+Allow: /CookiePolicy/
+Allow: /GDPRCompliance/
+Allow: /SiteMap/
+
 Sitemap: https://cryptosplitter.app/sitemap.xml

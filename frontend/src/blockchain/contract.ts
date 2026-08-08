@@ -4,7 +4,10 @@ import { getContract } from "thirdweb";
 import { client } from "../ThirdwebClient";
 
 export const EVENT_CONTRACT_ADDRESS = {
-  11155111: "0x97D775D88340694bDD022e75d0fA3a0c8Bd80776",
+  11155111: "0x67272b55c8cB92C08dB781397136A199880A8358",
+  300: "0xf7125C81e6d5D67C36D5A77BD4b5a367589D7706",
+  8453: "0xf389632AbB022D8908d71e5b67F6cE26C1aD6f6F",
+  42161: "0xB5acf3E211319ada3ab3aAa7399e25837D7211d4",
 };
 
 type ChainWithId = {

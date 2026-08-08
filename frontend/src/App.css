@@ -1,0 +1,119 @@
+/* ============================================================
+   CRYPTOSPLITTER — UNIFIED DESIGN SYSTEM & COLOR PALETTE
+   Single central color palette for the entire application
+   ============================================================ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+:root {
+  /* ── Core Backgrounds & Surfaces ── */
+  --bg: #000000;
+  --surface: #040507;
+  --surface-2: #111418;
+  --surface-3: #181c22;
+  --footer-bg: #040507;
+
+  /* ── Primary Brand & Accent ── */
+  --brand: #3b82f6;
+  --brand-hover: #2563eb;
+  --brand-dark: #1d4ed8;
+  --brand-light: #60a5fa;
+  --brand-soft: rgba(59, 130, 246, 0.08);
+  --brand-medium: rgba(59, 130, 246, 0.15);
+  --brand-strong: rgba(59, 130, 246, 0.25);
+  --brand-glow: rgba(59, 130, 246, 0.15);
+  --brand-glow-strong: rgba(59, 130, 246, 0.3);
+
+  /* ── Unified Blue Scale ── */
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --blue-800: #1e40af;
+  --blue-900: #1e3a8a;
+  --blue-950: #172554;
+
+  /* ── Accent Colors ── */
+  --purple: #7c5cfc;
+  --purple-dark: #6240e8;
+  --purple-light: #a78bfa;
+  --purple-glow: rgba(124, 92, 252, 0.15);
+
+  --cyan: #06d6d0;
+  --cyan-dark: #05b0ab;
+  --cyan-light: #67e8e0;
+  --cyan-glow: rgba(6, 214, 208, 0.15);
+
+  --emerald: #10b981;
+  --emerald-dark: #059669;
+  --emerald-light: #6ee7b7;
+  --emerald-glow: rgba(16, 185, 129, 0.15);
+
+  /* ── Status Tokens ── */
+  --success: var(--blue-400);
+  --success-bg: rgba(96, 165, 250, 0.08);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --pending: var(--blue-400);
+  --pending-bg: rgba(96, 165, 250, 0.08);
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.12);
+
+  /* ── Typography & Ink ── */
+  --ink: #eef0f2;
+  --ink-muted: #8a8f98;
+  --ink-faint: #3d424a;
+  --ink-dark: #06080a;
+
+  /* ── Borders ── */
+  --border: rgba(255, 255, 255, 0.07);
+  --border-hover: rgba(59, 130, 246, 0.25);
+
+  /* ── Radius ── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 4px 20px rgba(59, 130, 246, 0.2);
+  --shadow-glow-strong: 0 8px 30px rgba(59, 130, 246, 0.3);
+}
+
+/* ─── Global Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--blue-800);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--blue-600);
+}
+
+/* ─── Base Reset & Defaults ────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

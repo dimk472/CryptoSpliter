@@ -20,6 +20,7 @@
   align-items: center;
   gap: 6px;
   transition: all 0.2s ease;
+  text-decoration: none;
 }
 
 .legal-back-btn:hover {

@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   width: 100%;
-  background: #131416;
+  background: #000;
   z-index: 9999;
   transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
   overflow: hidden;
@@ -42,17 +42,10 @@
   opacity: 0.96;
 }
 
+/* Το site είναι ήδη πλήρως ορατό/render-αρισμένο από την αρχή. */
+/* Η κουρτίνα (z-index: 9999) το καλύπτει οπτικά - δεν χρειάζεται opacity/visibility trick εδώ. */
 .hero {
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 0.2s ease,
-    visibility 0.2s ease;
-}
-
-.hero.is-ready {
-  opacity: 1;
-  visibility: visible;
+  position: relative;
 }
 
 .intro-bg {

@@ -24,6 +24,10 @@ function LoadingEffect({ onAnimationComplete }: LoadingEffectProps) {
         document.documentElement.style.overflow = "hidden";
         document.documentElement.classList.add("intro-bg");
 
+        // Η σελίδα είναι ήδη πλήρως ορατή/render-αρισμένη από κάτω -
+        // δεν χρειάζεται να περιμένουμε τίποτα άλλο εκτός από το άνοιγμα της κουρτίνας.
+        heroSection.style.opacity = "1";
+        heroSection.style.visibility = "visible";
 
         topHalf.style.backgroundColor = "#000000";
         bottomHalf.style.backgroundColor = "#000000";
@@ -70,8 +74,6 @@ function LoadingEffect({ onAnimationComplete }: LoadingEffectProps) {
         createSplitLogo(bottomHalf, "bottom");
 
         const open = () => {
-            heroSection.style.opacity = "1";
-            heroSection.style.visibility = "visible";
             topHalf.classList.add("reveal");
             bottomHalf.classList.add("reveal");
 
@@ -91,10 +93,26 @@ function LoadingEffect({ onAnimationComplete }: LoadingEffectProps) {
             }, 800);
         };
 
-        const timer = setTimeout(open, 150);
+        // Ανοίγει μόλις η σελίδα (assets, fonts, εικόνες) έχει φορτώσει πλήρως -
+        // αν έχει ήδη φορτώσει πριν προλάβει να τρέξει το effect, ανοίγει αμέσως.
+        // Fallback timer (max 600ms) ώστε να μην κολλάει επ' άπειρον αν κάτι αργεί να φορτώσει.
+        let opened = false;
+        const safeOpen = () => {
+            if (opened) return;
+            opened = true;
+            open();
+        };
+
+        if (document.readyState === "complete") {
+            safeOpen();
+        } else {
+            window.addEventListener("load", safeOpen, { once: true });
+        }
+        const fallbackTimer = setTimeout(safeOpen, 600);
 
         return () => {
-            clearTimeout(timer);
+            window.removeEventListener("load", safeOpen);
+            clearTimeout(fallbackTimer);
             document.documentElement.classList.remove("intro-bg");
             document.body.style.overflow = "";
             document.documentElement.style.overflow = "";

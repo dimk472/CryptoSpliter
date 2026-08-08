@@ -1,6 +1,9 @@
 import { useState } from "react";
-import "./styles/DonateSection.css";
-import "./styles/Legal.css";
+import { Link } from "react-router-dom";
+import SeoHead from "../components/seo/SeoHead";
+import { DONATE_SEO } from "../seo/seoConfig.ts";
+import "../components/styles/DonateSection.css";
+import "../components/styles/Legal.css";
 
 type DonateOption = {
     id: string;
@@ -62,11 +65,7 @@ function truncateAddress(address: string): string {
     return `${address.slice(0, 6)}...${address.slice(-6)}`;
 }
 
-type DonateSectionProps = {
-    onBack?: () => void;
-};
-
-export default function DonateSection({ onBack }: DonateSectionProps) {
+export default function DonateSection() {
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const handleCopy = async (id: string, address: string) => {
@@ -79,22 +78,18 @@ export default function DonateSection({ onBack }: DonateSectionProps) {
         }
     };
 
-    const handleBack = () => {
-        if (onBack) onBack();
-        window.location.href = '/';
-    };
-
     return (
-        <div className="legal-wrap">
+        <>
+            <SeoHead {...DONATE_SEO} />
+            <div className="legal-wrap">
             <div className="legal-inner">
-                {/* Back Button */}
-                <button
+                <Link
                     className="legal-back-btn"
-                    onClick={handleBack}
+                    to="/"
                     aria-label="Go back"
                 >
                     ← Back
-                </button>
+                </Link>
 
                 <div className="legal-header">
                     <div className="legal-tag">SUPPORT</div>
@@ -153,5 +148,6 @@ export default function DonateSection({ onBack }: DonateSectionProps) {
                 </div>
             </div>
         </div>
+        </>
     );
 }

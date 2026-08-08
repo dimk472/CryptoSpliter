@@ -12,6 +12,8 @@ contract SmartContract is ReentrancyGuard {
 
     uint256 constant TOLERANCE_BPS = 200;
     using PriceConverter for uint256;
+    uint256 public platformFeeBps = 50;
+    address public treasuryWallet;
 
     error NotOwner();
     error NotEnoughParticipants();
@@ -32,6 +34,7 @@ contract SmartContract is ReentrancyGuard {
     error DuplicateParticipant();
     error InvalidParticipant();
     error InvalidShare();
+    error TreasuryWalletNotSet();
 
     address public contractOwner;
 
@@ -98,6 +101,16 @@ contract SmartContract is ReentrancyGuard {
     function _getEventId(bytes32 _offChainId) internal view returns (uint256) {
         if (!offChainIdExists[_offChainId]) revert InvalidEventId();
         return offChainIdToEventId[_offChainId];
+    }
+
+    function setPlatformFee(uint256 _newFeeBps) external onlyOwner {
+        require(_newFeeBps <= 500, "Fee too high"); // max 5%
+        platformFeeBps = _newFeeBps;
+    }
+
+    function setTreasuryWallet(address _treasuryWallet) external onlyOwner {
+        require(_treasuryWallet != address(0), "Invalid address");
+        treasuryWallet = _treasuryWallet;
     }
 
     // -------------------------
@@ -184,29 +197,53 @@ contract SmartContract is ReentrancyGuard {
         if (!e.isParticipant[msg.sender]) revert NotAParticipant();
         if (e.hasPaid[msg.sender]) revert HasAlreadyPaid();
 
-        uint256 share = e.shares[msg.sender];
-        uint256 tolerance = (share * TOLERANCE_BPS) / 10000;
-        uint256 amountInUsd;
-
         SupportedToken storage tokenInfo = supportedTokens[_tokenAddress];
 
         if (!tokenInfo.isSupported) revert TokenNotSupported();
 
-        amountInUsd = _amount.getTokenUsdValue(
+        uint256 amountInUsd = _amount.getTokenUsdValue(
             tokenInfo.decimals,
             tokenInfo.priceFeed
         );
 
+        uint256 share = e.shares[msg.sender];
+        uint256 tolerance = (share * TOLERANCE_BPS) / 10000;
+
         if (amountInUsd < share - tolerance) revert NotEnoughFunds();
         if (amountInUsd > share + tolerance) revert TooMuchFunds();
 
-        IERC20(_tokenAddress).safeTransferFrom(msg.sender, e.owner, _amount);
+        // =========================
+        // PLATFORM FEE
+        // =========================
+
+        if (treasuryWallet == address(0)) revert TreasuryWalletNotSet();
+
+        uint256 feeUsd = (amountInUsd * platformFeeBps) / 10000;
+
+        uint256 feeToken = feeUsd.getTokenAmountFromUsd(
+            tokenInfo.decimals,
+            tokenInfo.priceFeed
+        );
+
+        uint256 ownerAmount = _amount - feeToken;
 
         // =========================
         // UPDATE STATE
         // =========================
+
         e.hasPaid[msg.sender] = true;
         e.havePaidParticipants++;
+
+        IERC20 token = IERC20(_tokenAddress);
+
+        // Παίρνει όλο το ποσό από τον χρήστη
+        token.safeTransferFrom(msg.sender, address(this), _amount);
+
+        // Στέλνει το ποσό στον owner
+        token.safeTransfer(e.owner, ownerAmount);
+
+        // Στέλνει το fee στο Treasury Wallet
+        token.safeTransfer(treasuryWallet, feeToken);
 
         emit Payment(
             msg.sender,
@@ -238,14 +275,38 @@ contract SmartContract is ReentrancyGuard {
 
         uint256 share = e.shares[msg.sender];
         uint256 tolerance = (share * TOLERANCE_BPS) / 10000;
+
         if (amountInUsd < share - tolerance) revert NotEnoughFunds();
         if (amountInUsd > share + tolerance) revert TooMuchFunds();
+
+        // =========================
+        // PLATFORM FEE
+        // =========================
+        if (treasuryWallet == address(0)) revert TreasuryWalletNotSet();
+
+        uint256 feeUsd = (amountInUsd * platformFeeBps) / 10000;
+
+        uint256 feeEth = feeUsd.getTokenAmountFromUsd(
+            tokenInfo.decimals,
+            tokenInfo.priceFeed
+        );
+
+        uint256 ownerAmount = msg.value - feeEth;
+
+        // =========================
+        // UPDATE STATE
+        // =========================
 
         e.hasPaid[msg.sender] = true;
         e.havePaidParticipants++;
 
-        (bool sent, ) = e.owner.call{value: msg.value}("");
-        if (!sent) revert ErrorTransferingEther();
+        // Στέλνει το ποσό στον owner
+        (bool sentOwner, ) = e.owner.call{value: ownerAmount}("");
+        if (!sentOwner) revert ErrorTransferingEther();
+
+        // Στέλνει το fee στο Treasury
+        (bool sentTreasury, ) = payable(treasuryWallet).call{value: feeEth}("");
+        if (!sentTreasury) revert ErrorTransferingEther();
 
         emit Payment(
             msg.sender,

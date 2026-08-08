@@ -6,7 +6,7 @@ const router = Router();
 type ParticipantInput = {
   address?: unknown;
   name?: unknown;
-  amount?: unknown; // ✅ Προσθήκη του amount στον τύπο εισόδου
+  amount?: unknown;
 };
 
 type SplitInput = ParticipantInput & {
@@ -196,7 +196,6 @@ router.post("/", async (req, res) => {
       }))
       .filter((item) => item.address.startsWith("0x"));
 
-    // ✅ Σωστό De-duplication με βάση το address
     const uniqueParticipants = mappedParticipants.filter(
       (item, index, self) =>
         self.findIndex((p) => p.address === item.address) === index,
@@ -347,28 +346,28 @@ router.post("/:eventId/pay", async (req, res) => {
 export default router;
 
 // ==========================================================================
-// CONTACTS ROUTES
+// CONTACTS ROUTES (MULTI-CHAIN VERSION)
 // ==========================================================================
-// Separate router so it can be mounted at its own base path, e.g.:
+// Uses tables: contacts + contact_addresses
 //
-//   import eventsRouter, { contactsRouter } from "./events"; // this file
-//   app.use("/events", eventsRouter);
-//   app.use("/contacts", contactsRouter);
+// Table: contacts (υπάρχων πίνακας, χωρίς τη στήλη address)
+//   id uuid primary key default gen_random_uuid()
+//   owner_wallet varchar(42) not null
+//   name varchar(100) not null
+//   photo text
+//   created_at timestamp default now()
+//   updated_at timestamp default now()
 //
-// Table (Supabase / Postgres):
-//
-//   create table contacts (
-//     id uuid primary key default gen_random_uuid(),
-//     owner_wallet varchar(42) not null,
-//     name varchar(100) not null,
-//     address varchar(42) not null,
-//     photo text,
-//     created_at timestamp default now(),
-//     updated_at timestamp default now(),
-//     unique (owner_wallet, address)
-//   );
-//
-//   create index idx_contacts_owner_wallet on contacts (owner_wallet);
+// Table: contact_addresses (νέος πίνακας)
+//   id uuid primary key default gen_random_uuid()
+//   contact_id uuid not null references contacts(id) on delete cascade
+//   address varchar(42) not null
+//   chain_id integer not null default 1
+//   chain_name varchar(50) not null default 'Ethereum'
+//   label varchar(100)
+//   is_primary boolean default false
+//   created_at timestamp default now()
+//   unique (contact_id, address, chain_id)
 
 export const contactsRouter = Router();
 
@@ -389,21 +388,55 @@ contactsRouter.get("/", async (req, res) => {
       return res.status(400).json({ error: "Missing wallet query parameter" });
     }
 
-    const { data, error } = await supabase
+    // Fetch contacts
+    const { data: contacts, error: contactsError } = await supabase
       .from("contacts")
-      .select("id, name, address, photo")
+      .select("id, owner_wallet, name, photo, created_at, updated_at")
       .ilike("owner_wallet", ownerWallet)
       .order("name", { ascending: true });
 
-    if (error) {
-      console.error("CONTACTS FETCH ERROR:", error);
+    if (contactsError) {
+      console.error("CONTACTS FETCH ERROR:", contactsError);
       return res.status(500).json({
         error: "Failed to fetch contacts",
-        details: error.message,
+        details: contactsError.message,
       });
     }
 
-    return res.json(data ?? []);
+    if (!contacts || contacts.length === 0) {
+      return res.json([]);
+    }
+
+    // Fetch addresses for all contacts
+    const contactIds = contacts.map((c) => c.id);
+    const { data: addresses, error: addressesError } = await supabase
+      .from("contact_addresses")
+      .select("*")
+      .in("contact_id", contactIds)
+      .order("is_primary", { ascending: false });
+
+    if (addressesError) {
+      console.error("ADDRESSES FETCH ERROR:", addressesError);
+      return res.status(500).json({
+        error: "Failed to fetch contact addresses",
+        details: addressesError.message,
+      });
+    }
+
+    // Group addresses by contact_id
+    const addressesByContact = new Map<string, typeof addresses>();
+    for (const addr of addresses || []) {
+      const list = addressesByContact.get(addr.contact_id) || [];
+      list.push(addr);
+      addressesByContact.set(addr.contact_id, list);
+    }
+
+    const response = contacts.map((contact) => ({
+      ...contact,
+      addresses: addressesByContact.get(contact.id) || [],
+    }));
+
+    return res.json(response);
   } catch (err) {
     console.error("CONTACTS GET FATAL ERROR:", err);
     return res.status(500).json({
@@ -414,15 +447,12 @@ contactsRouter.get("/", async (req, res) => {
 });
 
 // POST /contacts
-// body: { owner_wallet, name, address, photo? }
+// body: { owner_wallet, name, photo?, addresses: [{ address, chain_id, chain_name, label?, is_primary? }] }
 contactsRouter.post("/", async (req, res) => {
   try {
-    const { owner_wallet, name, address, photo } = req.body ?? {};
+    const { owner_wallet, name, photo, addresses } = req.body ?? {};
 
     const normalizedOwnerWallet = String(owner_wallet ?? "")
-      .trim()
-      .toLowerCase();
-    const normalizedAddress = String(address ?? "")
       .trim()
       .toLowerCase();
     const trimmedName = String(name ?? "").trim();
@@ -435,39 +465,88 @@ contactsRouter.post("/", async (req, res) => {
     if (!trimmedName) {
       return res.status(400).json({ error: "A name is required" });
     }
-    if (!isValidWallet(normalizedAddress)) {
+    if (!Array.isArray(addresses) || addresses.length === 0) {
       return res
         .status(400)
-        .json({ error: "A valid contact address is required" });
+        .json({ error: "At least one address is required" });
     }
 
-    // ✅ upsert με βάση (owner_wallet, address): αν υπάρχει ήδη η επαφή, ενημερώνεται
-    const { data, error } = await supabase
+    // Validate addresses
+    for (const addr of addresses) {
+      if (!isValidWallet(addr.address)) {
+        return res.status(400).json({
+          error: `Invalid address: ${addr.address}`,
+        });
+      }
+    }
+
+    // Insert contact
+    const { data: contact, error: contactError } = await supabase
       .from("contacts")
-      .upsert(
-        [
-          {
-            owner_wallet: normalizedOwnerWallet,
-            name: trimmedName,
-            address: normalizedAddress,
-            photo: photo ?? null,
-            updated_at: new Date().toISOString(),
-          },
-        ],
-        { onConflict: "owner_wallet,address" },
-      )
-      .select("id, name, address, photo")
+      .insert([
+        {
+          owner_wallet: normalizedOwnerWallet,
+          name: trimmedName,
+          photo: photo || null,
+        },
+      ])
+      .select("id")
       .single();
 
-    if (error || !data) {
-      console.error("CONTACT UPSERT ERROR:", error);
+    if (contactError || !contact) {
+      console.error("CONTACT INSERT ERROR:", contactError);
       return res.status(500).json({
-        error: "Failed to save contact",
-        details: error?.message,
+        error: "Failed to create contact",
+        details: contactError?.message,
       });
     }
 
-    return res.status(201).json(data);
+    // Insert addresses
+    const addressRows = addresses.map((addr: any) => ({
+      contact_id: contact.id,
+      address: String(addr.address || "")
+        .trim()
+        .toLowerCase(),
+      chain_id: Number(addr.chain_id) || 1,
+      chain_name: String(addr.chain_name || "Ethereum").trim(),
+      label: addr.label || null,
+      is_primary: Boolean(addr.is_primary),
+    }));
+
+    const { error: addrError } = await supabase
+      .from("contact_addresses")
+      .insert(addressRows);
+
+    if (addrError) {
+      console.error("ADDRESS INSERT ERROR:", addrError);
+      // Cleanup: delete the contact if addresses failed
+      await supabase.from("contacts").delete().eq("id", contact.id);
+      return res.status(500).json({
+        error: "Failed to save contact addresses",
+        details: addrError.message,
+      });
+    }
+
+    // Fetch the complete contact with addresses
+    const { data: savedContact, error: fetchError } = await supabase
+      .from("contacts")
+      .select("id, owner_wallet, name, photo, created_at, updated_at")
+      .eq("id", contact.id)
+      .single();
+
+    if (fetchError || !savedContact) {
+      return res.status(201).json({ id: contact.id });
+    }
+
+    const { data: savedAddresses } = await supabase
+      .from("contact_addresses")
+      .select("*")
+      .eq("contact_id", contact.id);
+
+    return res.status(201).json({
+      ...savedContact,
+      addresses: savedAddresses || [],
+    });
   } catch (err) {
     console.error("CONTACTS POST FATAL ERROR:", err);
     return res.status(500).json({
@@ -478,16 +557,13 @@ contactsRouter.post("/", async (req, res) => {
 });
 
 // PUT /contacts/:id
-// body: { owner_wallet, name, address, photo? }
+// body: { owner_wallet, name, photo?, addresses: [{ address, chain_id, chain_name, label?, is_primary? }] }
 contactsRouter.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { owner_wallet, name, address, photo } = req.body ?? {};
+    const { owner_wallet, name, photo, addresses } = req.body ?? {};
 
     const normalizedOwnerWallet = String(owner_wallet ?? "")
-      .trim()
-      .toLowerCase();
-    const normalizedAddress = String(address ?? "")
       .trim()
       .toLowerCase();
     const trimmedName = String(name ?? "").trim();
@@ -500,38 +576,100 @@ contactsRouter.put("/:id", async (req, res) => {
     if (!trimmedName) {
       return res.status(400).json({ error: "A name is required" });
     }
-    if (!isValidWallet(normalizedAddress)) {
-      return res
-        .status(400)
-        .json({ error: "A valid contact address is required" });
-    }
 
-    const { data, error } = await supabase
+    // Check if contact exists and belongs to owner
+    const { data: existingContact, error: lookupError } = await supabase
       .from("contacts")
-      .update({
-        name: trimmedName,
-        address: normalizedAddress,
-        photo: photo ?? null,
-        updated_at: new Date().toISOString(),
-      })
+      .select("id")
       .eq("id", id)
       .ilike("owner_wallet", normalizedOwnerWallet)
-      .select("id, name, address, photo")
       .maybeSingle();
 
-    if (error) {
-      console.error("CONTACT UPDATE ERROR:", error);
+    if (lookupError) {
+      console.error("CONTACT LOOKUP ERROR:", lookupError);
       return res.status(500).json({
-        error: "Failed to update contact",
-        details: error.message,
+        error: "Failed to find contact",
+        details: lookupError.message,
       });
     }
 
-    if (!data) {
+    if (!existingContact) {
       return res.status(404).json({ error: "Contact not found" });
     }
 
-    return res.json(data);
+    // Update contact
+    const { error: updateError } = await supabase
+      .from("contacts")
+      .update({
+        name: trimmedName,
+        photo: photo || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (updateError) {
+      console.error("CONTACT UPDATE ERROR:", updateError);
+      return res.status(500).json({
+        error: "Failed to update contact",
+        details: updateError.message,
+      });
+    }
+
+    // Replace addresses: delete old, insert new
+    if (Array.isArray(addresses) && addresses.length > 0) {
+      // Validate addresses
+      for (const addr of addresses) {
+        if (!isValidWallet(addr.address)) {
+          return res.status(400).json({
+            error: `Invalid address: ${addr.address}`,
+          });
+        }
+      }
+
+      // Delete old addresses
+      await supabase.from("contact_addresses").delete().eq("contact_id", id);
+
+      // Insert new addresses
+      const addressRows = addresses.map((addr: any) => ({
+        contact_id: id,
+        address: String(addr.address || "")
+          .trim()
+          .toLowerCase(),
+        chain_id: Number(addr.chain_id) || 1,
+        chain_name: String(addr.chain_name || "Ethereum").trim(),
+        label: addr.label || null,
+        is_primary: Boolean(addr.is_primary),
+      }));
+
+      const { error: addrError } = await supabase
+        .from("contact_addresses")
+        .insert(addressRows);
+
+      if (addrError) {
+        console.error("ADDRESS UPDATE ERROR:", addrError);
+        return res.status(500).json({
+          error: "Failed to update addresses",
+          details: addrError.message,
+        });
+      }
+    }
+
+    // Fetch updated contact
+    const { data: updatedContact } = await supabase
+      .from("contacts")
+      .select("id, owner_wallet, name, photo, created_at, updated_at")
+      .eq("id", id)
+      .single();
+
+    const { data: updatedAddresses } = await supabase
+      .from("contact_addresses")
+      .select("*")
+      .eq("contact_id", id);
+
+    return res.json({
+      ...updatedContact,
+      addresses: updatedAddresses || [],
+    });
   } catch (err) {
     console.error("CONTACTS PUT FATAL ERROR:", err);
     return res.status(500).json({
@@ -555,6 +693,7 @@ contactsRouter.delete("/:id", async (req, res) => {
         .json({ error: "A valid wallet query parameter is required" });
     }
 
+    // Addresses will be cascade-deleted by FK constraint
     const { data, error } = await supabase
       .from("contacts")
       .delete()

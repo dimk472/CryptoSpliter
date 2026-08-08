@@ -1,21 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+// hooks/useContacts.ts
 
-export type Contact = {
-  id: string;
-  name: string;
-  address: string;
-  photo: string; // base64 data URL, or '' if none was set
-};
+import { useCallback, useEffect, useState } from "react";
+import type { Contact, ContactAddress } from "../../types/contacts";
 
 const API_URL = (
   import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 ).replace(/\/$/, "");
 
-/**
- * Resizes/compresses an uploaded image file into a small base64 data URL,
- * so profile photos stay cheap to send/store (keep them well under any
- * request body size limit your API/proxy enforces).
- */
 export function compressImageToDataUrl(
   file: File,
   maxSize = 160,
@@ -49,11 +40,6 @@ export function compressImageToDataUrl(
   });
 }
 
-/**
- * Manages a per-wallet address book, backed by the /contacts API.
- * `ownerAddress` is the currently connected wallet — every contact belongs
- * to it, and the backend enforces that on every read/write.
- */
 export function useContacts(ownerAddress: string) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +69,12 @@ export function useContacts(ownerAddress: string) {
   }, [refresh]);
 
   const saveContact = useCallback(
-    async (contact: Omit<Contact, "id"> & { id?: string }) => {
+    async (contact: {
+      id?: string;
+      name: string;
+      photo?: string;
+      addresses: Omit<ContactAddress, "id" | "contact_id" | "created_at">[];
+    }) => {
       if (!ownerAddress) return;
 
       try {
@@ -97,8 +88,8 @@ export function useContacts(ownerAddress: string) {
           body: JSON.stringify({
             owner_wallet: ownerAddress,
             name: contact.name,
-            address: contact.address,
             photo: contact.photo || null,
+            addresses: contact.addresses,
           }),
         });
 
@@ -133,9 +124,13 @@ export function useContacts(ownerAddress: string) {
   );
 
   const findByAddress = useCallback(
-    (address: string) => {
-      return contacts.find(
-        (c) => c.address.toLowerCase() === address.toLowerCase(),
+    (address: string, chainId?: number) => {
+      return contacts.find((c) =>
+        c.addresses.some(
+          (addr) =>
+            addr.address.toLowerCase() === address.toLowerCase() &&
+            (chainId === undefined || addr.chain_id === chainId),
+        ),
       );
     },
     [contacts],
