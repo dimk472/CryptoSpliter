@@ -152,6 +152,7 @@
   .sa-card {
     padding: 24px 20px;
     border-radius: 18px;
+    width: 100%;
   }
 }
 
@@ -159,6 +160,7 @@
   .sa-card {
     padding: 18px 14px;
     border-radius: 16px;
+    width: 100%;
   }
 }
 
