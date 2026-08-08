@@ -119,32 +119,33 @@
 /* ─── Card (Glass) ────────────────────────────────────────────── */
 
 .sa-card {
-  background: rgba(255, 255, 255, 0.38);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  transform: translateZ(0);
   border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 20px;
   padding: 32px;
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    0 8px 32px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
   transition: all 0.25s ease;
 }
 
 .sa-card:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.65);
   border-color: rgba(59, 130, 246, 0.3);
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.07),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    0 12px 40px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .sa-card--highlight {
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.7);
   border-color: rgba(59, 130, 246, 0.35);
   box-shadow:
     0 12px 48px rgba(59, 130, 246, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 @media (max-width: 768px) {
