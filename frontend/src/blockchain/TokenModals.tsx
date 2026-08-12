@@ -20,11 +20,18 @@ export const TOKENS: Record<number, TokenConfig[]> = {
 
     ],
 
+    // Arbitrum
     42161: [
         { symbol: "ETH", address: "0x0000000000000000000000000000000000000000", native: true, decimals: 18 },
         { symbol: "ARB", address: "0x912ce59144191c1204e64559fe8253a0e49e6548", native: false, decimals: 18 },
         { symbol: "USDC", address: "0xaf88d065e77c8cc2239327c5edb3a432268e5831", native: false, decimals: 6 },
         { symbol: "LINK", address: "0xf97f4df75117a78c1a5a0dbb814af92458539fb4", native: false, decimals: 18 },
+    ],
+
+    137: [
+        { symbol: "MATIC", address: "0x0000000000000000000000000000000000001010", native: true, decimals: 18 },
+        { symbol: "USDC", address: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359", native: false, decimals: 6 },
+        { symbol: "LINK", address: "0x53e0bca35ec356bd5dddfebbd1fc0fd03fabad39", native: false, decimals: 18 },
     ],
 
     300: [

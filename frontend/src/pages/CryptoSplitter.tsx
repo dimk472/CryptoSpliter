@@ -55,6 +55,7 @@ import {
     base,
     arbitrum,
     sepolia,
+    polygon,
 
 } from "thirdweb/chains";
 
@@ -78,6 +79,7 @@ const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replac
 const SUPPORTED_CHAINS = [
     base,
     arbitrum,
+    polygon,
     sepolia,
     zksyncSepolia,
 ];
@@ -1172,6 +1174,12 @@ function CryptoSpliter() {
                                     </ChainProvider>
 
                                     <ChainProvider chain={arbitrum}>
+                                        <ChainIcon
+                                            client={client}
+                                            className="chain-icon"
+                                        />
+                                    </ChainProvider>
+                                    <ChainProvider chain={polygon}>
                                         <ChainIcon
                                             client={client}
                                             className="chain-icon"
