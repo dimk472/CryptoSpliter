@@ -4,23 +4,7 @@
 
 🌐 **Live Demo:** https://cryptosplitter.app/
 
-<img width="1868" height="858" alt="image" src="https://github.com/user-attachments/assets/38930649-ad73-41a1-9dfb-6c81e0e50758" />
 
-<img width="1867" height="715" alt="image" src="https://github.com/user-attachments/assets/cebe359b-bc48-493d-91ab-5e8a6114230f" />
-
-<img width="1842" height="682" alt="image" src="https://github.com/user-attachments/assets/f62aaf33-d57d-4fd9-967d-0b256d6b3592" />
-
-<img width="1853" height="677" alt="image" src="https://github.com/user-attachments/assets/dee97fbb-3bf3-4b4e-b050-3b45ea9d0bc6" />
-
-<img width="641" height="753" alt="image" src="https://github.com/user-attachments/assets/43d6b137-ca6f-4370-81e9-58ba24b945a9" />
-
-<img width="1843" height="576" alt="image" src="https://github.com/user-attachments/assets/9a2d9b18-2e1b-4cd7-ad26-5f2bf5c250f2" />
-
-<img width="1868" height="551" alt="image" src="https://github.com/user-attachments/assets/f9dc9d95-e991-4366-9153-e68f7a510c5c" />
-
-<img width="1855" height="590" alt="image" src="https://github.com/user-attachments/assets/6df0ee3f-4db4-4d6d-953c-7e53737cb09c" />
-
----
 
 # What is CryptoSplitter?
 
