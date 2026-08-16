@@ -20,8 +20,8 @@ const sharedSteps = [
 const PAGES = [
   {
     path: '/',
-    title: 'CryptoSplitter – Split Crypto Expenses On-Chain',
-    description: 'Split crypto bills with friends on Ethereum, Base, Polygon & more. Create shared events, set shares, and settle payments directly from your wallet. 0.5% platform fee.',
+    title: 'Split Crypto Expenses & Bills On-Chain | CryptoSplitter',
+    description: 'Split crypto expenses & group bills with friends on Ethereum, Base, Polygon & 10+ chains. Create shared events, set shares, and settle payments directly from your wallet.',
     jsonLd: {
       "@context": "https://schema.org",
       "@graph": [
@@ -29,7 +29,7 @@ const PAGES = [
           "@type": "WebSite",
           name: SITE_NAME,
           url: SITE_URL,
-          description: "Split crypto expenses instantly with friends on multiple blockchains.",
+          description: "Split crypto expenses & bills instantly with friends on multiple blockchains.",
           publisher: {
             "@type": "Organization",
             name: SITE_NAME,
@@ -39,12 +39,12 @@ const PAGES = [
         },
         {
           "@type": "WebApplication",
-          name: SITE_NAME,
+          name: "CryptoSplitter – Split Crypto Expenses",
           url: SITE_URL,
           applicationCategory: "FinanceApplication",
           operatingSystem: "Web",
           browserRequirements: "Requires a Web3 wallet (MetaMask, Coinbase Wallet, etc.)",
-          description: "Decentralized expense-splitting app for cryptocurrency. Create events, add participants, and settle on-chain.",
+          description: "The decentralized app to split crypto expenses, divide shared bills, and settle payments on-chain.",
           offers: {
             "@type": "Offer",
             price: "0",

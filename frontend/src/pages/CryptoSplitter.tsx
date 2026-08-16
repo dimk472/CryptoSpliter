@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
     ConnectButton,
     useActiveWalletChain,
@@ -17,6 +17,7 @@ import { createWallet } from "thirdweb/wallets";
 import React, { useState, useEffect, useRef } from 'react';
 import SeoHead from '../components/seo/SeoHead.tsx';
 import { HOME_SEO } from '../seo/seoConfig.ts';
+import { getSplitPageSeo } from '../seo/splitPages.ts';
 import { useScrollReveal } from "../utils/useScrollReveal";
 import { shortenAddress } from "thirdweb/utils";
 import { ethers } from "ethers";
@@ -994,7 +995,7 @@ function HowItWorksSection() {
         <section className="how-it-works" id="learn">
             <div className="hiw-container">
                 <p className="hiw-label">How it Works</p>
-                <h2 className="hiw-heading">Split expenses in 3 simple steps</h2>
+                <h2 className="hiw-heading">Split crypto expenses in 3 simple steps</h2>
 
                 <div className="hiw-cards-wrapper">
                     <div className="how-it-works-cards">
@@ -1013,6 +1014,8 @@ function HowItWorksSection() {
 }
 
 function CryptoSpliter() {
+    const { slug } = useParams<{ slug?: string }>();
+    const seoConfig = slug ? getSplitPageSeo(slug) : undefined;
     const account = useActiveAccount();
     const [stableWalletAddress, setStableWalletAddress] = useState('');
     const [showLoading, setShowLoading] = useState(true);
@@ -1105,7 +1108,7 @@ function CryptoSpliter() {
 
     return (
         <>
-            <SeoHead {...HOME_SEO} />
+            <SeoHead {...(seoConfig || HOME_SEO)} />
             {showLoading && <LoadingEffect onAnimationComplete={handleLoadingComplete} />}
 
             <div>
@@ -1188,15 +1191,12 @@ function CryptoSpliter() {
                                 </div>
 
                                 <h1 className="hero-title">
-                                    Split what you spent.
-                                    <br />
-                                    Settle what you owe.
+                                    Split Crypto Expenses  &<br />Bills On-Chain
                                 </h1>
 
                                 <p className="hero-desc">
-                                    CryptoSplitter turns a shared expense into a plain, on-chain
-                                    ledger. Add the people, set the shares, everyone pays their
-                                    part straight from their own wallet.
+                                    CryptoSplitter is the ultimate app to split crypto expenses and group bills on-chain.
+                                    Add your crew, set the shares, and everyone settles their part directly from their Web3 wallet.
                                 </p>
 
                                 <div className="hero-actions">
@@ -1230,7 +1230,7 @@ function CryptoSpliter() {
 
                         </div>
                     </div>
-                </section>
+                </section >
 
                 <HowItWorksSection />
 
@@ -1273,6 +1273,7 @@ function CryptoSpliter() {
                                     <li><Link to="/split-link">Split LINK</Link></li>
                                     <li><Link to="/split-arb">Split ARB</Link></li>
                                     <li><Link to="/split-usdt">Split USDT</Link></li>
+                                    <li><Link to="/split-matic">Split MATIC</Link></li>
                                 </ul>
                             </div>
 
@@ -1283,6 +1284,7 @@ function CryptoSpliter() {
                                     <li><Link to="/split-arbitrum">Split on Arbitrum</Link></li>
                                     <li><Link to="/split-ethereum">Split on Ethereum</Link></li>
                                     <li><Link to="/split-polygon">Split on Polygon</Link></li>
+                                    <li><Link to="/split-BNB">Split on BNB Smart Chain</Link></li>
                                 </ul>
                             </div>
 
@@ -1332,7 +1334,7 @@ function CryptoSpliter() {
                         </div>
                     </div>
                 </footer>
-            </div>
+            </div >
         </>
     );
 }

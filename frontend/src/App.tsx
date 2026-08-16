@@ -4,7 +4,6 @@ import CryptoSpliter from "./pages/CryptoSplitter";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import DonateSection from "./pages/DonateSection";
-import SplitLandingPage from "./pages/SplitLandingPage";
 import { ThirdwebProvider } from "thirdweb/react";
 
 import "./App.css";
@@ -26,7 +25,20 @@ function App() {
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<CryptoSpliter />} />
-          <Route path="/split-:slug" element={<SplitLandingPage />} />
+          <Route path="/split-eth" element={<CryptoSpliter />} />
+          <Route path="/split-usdc" element={<CryptoSpliter />} />
+          <Route path="/split-link" element={<CryptoSpliter />} />
+          <Route path="/split-arb" element={<CryptoSpliter />} />
+          <Route path="/split-usdt" element={<CryptoSpliter />} />
+          <Route path="/split-matic" element={<CryptoSpliter />} />
+          <Route path="/split-base" element={<CryptoSpliter />} />
+          <Route path="/split-arbitrum" element={<CryptoSpliter />} />
+          <Route path="/split-ethereum" element={<CryptoSpliter />} />
+          <Route path="/split-polygon" element={<CryptoSpliter />} />
+          <Route path="/split-BNB" element={<CryptoSpliter />} />
+          <Route path="/split-splitwise-crypto-alternative" element={<CryptoSpliter />} />
+          <Route path="/split-vacation" element={<CryptoSpliter />} />
+          <Route path="/split-roommates" element={<CryptoSpliter />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfUse />} />
           <Route path="/donate" element={<DonateSection />} />
