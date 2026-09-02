@@ -234,52 +234,54 @@ function generateFallbackBodyContent(page) {
   const navLinks = PAGES.map(p => `<li><a href="${p.path}">${p.label || 'Home'}</a></li>`).join('\n          ');
 
   return `<div id="root">
-    <header>
-      <nav>
-        <a href="/"><strong>CryptoSplitter</strong></a>
-      </nav>
-    </header>
-    <main>
-      <article>
-        <h1>${h1Text}</h1>
-        <p>${page.description}</p>
+    <div id="seo-fallback-content" style="display:none;">
+      <header>
+        <nav>
+          <a href="/"><strong>CryptoSplitter</strong></a>
+        </nav>
+      </header>
+      <main>
+        <article>
+          <h1>${h1Text}</h1>
+          <p>${page.description}</p>
 
-        <section>
-          <h2>Split ${labelText} Easily with Web3 Wallets</h2>
-          <p>CryptoSplitter provides a seamless, non-custodial way to split group bills, shared travel expenses, roommate rent, and team costs directly on multiple blockchain networks. With built-in smart contract settlement, participants pay their exact portion using MetaMask, Coinbase Wallet, Rainbow, or any EVM wallet.</p>
-          <p>Eliminate manual debt tracking and centralized bank transfers. CryptoSplitter calculates precise shares, converts currencies if needed, and executes transparent on-chain payments across Ethereum, Base, Arbitrum, Polygon, Optimism, Avalanche, BNB Chain, Linea, and Scroll.</p>
-        </section>
+          <section>
+            <h2>Split ${labelText} Easily with Web3 Wallets</h2>
+            <p>CryptoSplitter provides a seamless, non-custodial way to split group bills, shared travel expenses, roommate rent, and team costs directly on multiple blockchain networks. With built-in smart contract settlement, participants pay their exact portion using MetaMask, Coinbase Wallet, Rainbow, or any EVM wallet.</p>
+            <p>Eliminate manual debt tracking and centralized bank transfers. CryptoSplitter calculates precise shares, converts currencies if needed, and executes transparent on-chain payments across Ethereum, Base, Arbitrum, Polygon, Optimism, Avalanche, BNB Chain, Linea, and Scroll.</p>
+          </section>
 
-        ${page.faqs && page.faqs.length > 0 ? `
-        <section>
-          <h2>Frequently Asked Questions</h2>
-          ${page.faqs.map(faq => `
-          <div>
-            <h3>${faq.question}</h3>
-            <p>${faq.answer}</p>
-          </div>`).join('')}
-        </section>` : ''}
+          ${page.faqs && page.faqs.length > 0 ? `
+          <section>
+            <h2>Frequently Asked Questions</h2>
+            ${page.faqs.map(faq => `
+            <div>
+              <h3>${faq.question}</h3>
+              <p>${faq.answer}</p>
+            </div>`).join('')}
+          </section>` : ''}
 
-        <section>
-          <h2>Supported Token and Network Split Guides</h2>
-          <ul>
-            ${navLinks}
-          </ul>
-        </section>
-      </article>
-    </main>
-    <footer>
-      <nav>
-        <p>
-          <a href="/privacy">Privacy Policy</a> | 
-          <a href="/terms">Terms of Use</a> | 
-          <a href="/donate">Donate</a> | 
-          <a href="/CookiePolicy/cookiePolicy.html">Cookie Policy</a> | 
-          <a href="/GDPRCompliance/gdpr.html">GDPR Compliance</a> | 
-          <a href="/SiteMap/siteMap.html">Sitemap</a>
-        </p>
-      </nav>
-    </footer>
+          <section>
+            <h2>Supported Token and Network Split Guides</h2>
+            <ul>
+              ${navLinks}
+            </ul>
+          </section>
+        </article>
+      </main>
+      <footer>
+        <nav>
+          <p>
+            <a href="/privacy">Privacy Policy</a> | 
+            <a href="/terms">Terms of Use</a> | 
+            <a href="/donate">Donate</a> | 
+            <a href="/CookiePolicy/cookiePolicy.html">Cookie Policy</a> | 
+            <a href="/GDPRCompliance/gdpr.html">GDPR Compliance</a> | 
+            <a href="/SiteMap/siteMap.html">Sitemap</a>
+          </p>
+        </nav>
+      </footer>
+    </div>
   </div>`;
 }
 
