@@ -52,6 +52,23 @@ export const zksyncSepolia = defineChain({
     ],
 });
 
+export const BotChain = defineChain({
+    id: 677,
+    name: "Bot Chain",
+    nativeCurrency: {
+        name: "Bot Token",
+        symbol: "BOT",
+        decimals: 18,
+    },
+    rpc: "https://rpc.botchain.ai",
+    blockExplorers: [
+        {
+            name: "Bot Chain Explorer",
+            url: "https://scan.botchain.ai",
+        },
+    ],
+});
+
 import {
     base,
     arbitrum,
@@ -83,6 +100,7 @@ const SUPPORTED_CHAINS = [
     polygon,
     sepolia,
     zksyncSepolia,
+    BotChain,
 ];
 
 const wallets = [

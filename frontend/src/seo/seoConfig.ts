@@ -12,9 +12,9 @@ export type SeoConfig = {
 };
 
 export const HOME_SEO: SeoConfig = {
-  title: "Split Crypto Expenses & Bills On-Chain | CryptoSplitter",
+  title: "CryptoSplitter – Split Crypto Expenses On-Chain",
   description:
-    "Split crypto expenses & group bills with friends on Ethereum, Base, Polygon & 10+ chains. Create shared events, set shares, and settle payments directly from your wallet.",
+    "Split crypto bills with friends on Ethereum, Base, Polygon & more. Create shared events, set shares, and settle payments directly from your wallet. 0.5% platform fee.",
   path: "/",
   jsonLd: {
     "@context": "https://schema.org",
@@ -24,7 +24,7 @@ export const HOME_SEO: SeoConfig = {
         name: SITE_NAME,
         url: SITE_URL,
         description:
-          "Split crypto expenses & bills instantly with friends on multiple blockchains.",
+          "Split crypto expenses instantly with friends on multiple blockchains.",
         publisher: {
           "@type": "Organization",
           name: SITE_NAME,
@@ -34,23 +34,23 @@ export const HOME_SEO: SeoConfig = {
       },
       {
         "@type": "WebApplication",
-        name: "CryptoSplitter – Split Crypto Expenses",
+        name: SITE_NAME,
         url: SITE_URL,
         applicationCategory: "FinanceApplication",
         operatingSystem: "Web",
         browserRequirements: "Requires a Web3 wallet (MetaMask, Coinbase Wallet, etc.)",
         description:
-          "The decentralized app to split crypto expenses, divide shared bills, and settle payments on-chain.",
+          "Decentralized expense-splitting app for cryptocurrency. Create events, add participants, and settle on-chain.",
         offers: {
           "@type": "Offer",
           price: "0",
           priceCurrency: "USD",
         },
         featureList: [
-          "Split crypto expenses across Ethereum, Base, Polygon, Arbitrum, & 10+ chains",
-          "Wallet-native P2P crypto payments",
-          "On-chain crypto bill splitting ledger",
-          "Contact management for quick crypto splits",
+          "Multi-chain support (Ethereum, Base, Polygon, Arbitrum, and more)",
+          "Wallet-native payments",
+          "On-chain expense ledger",
+          "Contact management for frequent splits",
         ],
       },
       {
@@ -58,23 +58,15 @@ export const HOME_SEO: SeoConfig = {
         mainEntity: [
           {
             "@type": "Question",
-            name: "How do I split crypto expenses with CryptoSplitter?",
+            name: "What is CryptoSplitter?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "To split crypto expenses, connect your Web3 wallet, create an event, enter total costs and participants' wallet addresses, and let everyone settle their share directly on-chain.",
+              text: "CryptoSplitter is a Web3 app that lets you split shared crypto expenses with friends. You create an event, add participants and amounts, and everyone pays their share directly from their wallet.",
             },
           },
           {
             "@type": "Question",
-            name: "What is the best app to split crypto bills?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "CryptoSplitter is the premier decentralized app to split crypto bills with friends. It supports ETH, USDC, USDT, and popular EVM networks with instant wallet-to-wallet settlement.",
-            },
-          },
-          {
-            "@type": "Question",
-            name: "Which blockchains can I use to split crypto?",
+            name: "Which blockchains does CryptoSplitter support?",
             acceptedAnswer: {
               "@type": "Answer",
               text: "CryptoSplitter supports Ethereum, Base, Arbitrum, Polygon, Optimism, Avalanche, BNB Chain, Linea, Scroll, and ZKsync Sepolia testnet.",

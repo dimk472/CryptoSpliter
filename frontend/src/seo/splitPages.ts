@@ -2,7 +2,7 @@ import { SITE_NAME, SITE_URL, type SeoConfig } from "./seoConfig";
 
 export type SplitPage = {
   slug: string;
-  kind: "chain" | "token" | "usecase";
+  kind: "chain" | "token";
   label: string;
   headline: string;
   subheadline: string;
@@ -18,16 +18,12 @@ function buildSeo(page: SplitPage): SeoConfig {
   const title =
     page.kind === "chain"
       ? `Split Crypto Expenses on ${page.label}`
-      : page.kind === "token"
-      ? `Split ${page.label} Bills with Friends`
-      : `${page.label} – CryptoSplitter`;
+      : `Split ${page.label} Bills with Friends`;
 
   const description =
     page.kind === "chain"
       ? `Split shared crypto expenses on ${page.label}. Create events, assign shares, and settle payments on-chain from your wallet. Fast, transparent, 0.5% fee.`
-      : page.kind === "token"
-      ? `Split ${page.label} expenses with friends on-chain. Track who owes what and pay your share directly from MetaMask, Coinbase Wallet, or Rainbow.`
-      : page.intro;
+      : `Split ${page.label} expenses with friends on-chain. Track who owes what and pay your share directly from MetaMask, Coinbase Wallet, or Rainbow.`;
 
   return {
     title,
@@ -44,34 +40,6 @@ function buildSeo(page: SplitPage): SeoConfig {
           isPartOf: { "@type": "WebSite", name: SITE_NAME, url: SITE_URL },
         },
         {
-          "@type": "BreadcrumbList",
-          itemListElement: [
-            {
-              "@type": "ListItem",
-              position: 1,
-              name: "Home",
-              item: SITE_URL,
-            },
-            {
-              "@type": "ListItem",
-              position: 2,
-              name: page.label,
-              item: `${SITE_URL}${path}`,
-            },
-          ],
-        },
-        {
-          "@type": "HowTo",
-          name: `How to split ${page.label} expenses with CryptoSplitter`,
-          description: `Step-by-step guide to splitting ${page.label} expenses on-chain using your Web3 wallet.`,
-          step: page.steps.map((stepText, idx) => ({
-            "@type": "HowToStep",
-            position: idx + 1,
-            name: `Step ${idx + 1}`,
-            text: stepText,
-          })),
-        },
-        {
           "@type": "FAQPage",
           mainEntity: page.faqs.map((faq) => ({
             "@type": "Question",
@@ -85,7 +53,7 @@ function buildSeo(page: SplitPage): SeoConfig {
 }
 
 const sharedSteps = [
-  "Connect your Web3 wallet (MetaMask, Coinbase Wallet, Rainbow, Rabby, and more).",
+  "Connect your Web3 wallet (MetaMask, Coinbase Wallet, Rainbow, and more).",
   "Create a split event, add participants, and set each person's share.",
   "Everyone settles their portion with an on-chain payment — no middleman.",
 ];
@@ -115,14 +83,14 @@ export const SPLIT_PAGES: Record<string, SplitPage> = {
       {
         question: "Do I need to send ETH manually to each person?",
         answer:
-          "Each participant pays their own share directly from their wallet to the event creator. You don't need to collect and redistribute funds yourself.",
+          "Each participant pays their own share from their wallet. You don't need to collect and redistribute funds yourself.",
       },
       {
-        question: "What fees does CryptoSplitter charge for ETH splits?",
-        answer: "CryptoSplitter charges a small 0.5% platform fee on settlements, plus standard network gas fees.",
+        question: "What fees does CryptoSplitter charge?",
+        answer: "CryptoSplitter charges a 0.5% platform fee on settlements, plus standard network gas fees.",
       },
     ],
-    relatedSlugs: ["ethereum", "base", "arbitrum", "usdc", "link", "arb"],
+    relatedSlugs: ["ethereum", "base", "arbitrum", "usdc"],
   },
 
   usdc: {
@@ -130,9 +98,9 @@ export const SPLIT_PAGES: Record<string, SplitPage> = {
     kind: "token",
     label: "USDC",
     headline: "Split USDC bills on-chain",
-    subheadline: "Stablecoin expense sharing without price volatility",
+    subheadline: "Stablecoin expense sharing without the awkward follow-ups",
     intro:
-      "USDC is the gold-standard stablecoin for shared costs — rent splits, group subscriptions, travel expenses. CryptoSplitter lets you track who owes what and settle in USDC across major EVM networks.",
+      "USDC is the go-to stablecoin for shared costs — rent splits, group subscriptions, travel expenses. CryptoSplitter lets you track who owes what and settle in USDC across major EVM networks.",
     benefits: [
       "Split dollar-pegged expenses without price volatility during settlement",
       "Supported on Ethereum, Base, Arbitrum, Polygon, and more",
@@ -149,75 +117,15 @@ export const SPLIT_PAGES: Record<string, SplitPage> = {
       {
         question: "Can I split a bill unevenly in USDC?",
         answer:
-          "Target custom amounts or percentages for each participant — you're never limited to equal splits.",
+          "Absolutely. Assign custom amounts or percentages to each participant — you're not limited to equal splits.",
       },
       {
-        question: "Is USDC settlement instant?",
+        question: "Is USDC the same as USD in CryptoSplitter?",
         answer:
-          "Yes! Transactions settle on-chain directly from your Web3 wallet within seconds depending on network block time.",
+          "Events can be denominated in fiat for tracking, but settlement happens on-chain in the native token or stablecoin of your chosen network.",
       },
     ],
-    relatedSlugs: ["usdt", "base", "ethereum", "eth", "arb"],
-  },
-
-  link: {
-    slug: "link",
-    kind: "token",
-    label: "LINK",
-    headline: "Split Chainlink (LINK) expenses on-chain",
-    subheadline: "Pay group expenses and shared node costs in LINK",
-    intro:
-      "For Web3 builders, node operators, and crypto-native teams, CryptoSplitter makes splitting Chainlink (LINK) expenses seamless. Track contributions, calculate shares, and settle in LINK directly on-chain.",
-    benefits: [
-      "Settle shared node hosting, API costs, or group expenses in LINK",
-      "Supported across Ethereum mainnet, Arbitrum, Polygon, and more",
-      "Direct wallet-to-wallet transactions with transparent execution",
-      "No custodial third party — full control in your wallet",
-    ],
-    steps: sharedSteps,
-    faqs: [
-      {
-        question: "Which networks support LINK splits?",
-        answer:
-          "You can split LINK on Ethereum mainnet, Arbitrum, Polygon, and any supported EVM chain where LINK is deployed.",
-      },
-      {
-        question: "How do I split a LINK expense with friends?",
-        answer:
-          "Connect your wallet, enter the total LINK amount or USD equivalent, add recipient wallet addresses, and confirm the split event on-chain.",
-      },
-    ],
-    relatedSlugs: ["eth", "usdc", "arbitrum", "ethereum"],
-  },
-
-  arb: {
-    slug: "arb",
-    kind: "token",
-    label: "ARB",
-    headline: "Split Arbitrum (ARB) bills with your squad",
-    subheadline: "Native token settlements for the Arbitrum community",
-    intro:
-      "Split expenses using Arbitrum's native governance token ARB. Perfect for DAO members, L2 enthusiasts, and groups active in the Arbitrum ecosystem.",
-    benefits: [
-      "Native ARB token bill splitting on Arbitrum One",
-      "Ultra-low L2 transaction fees for instant settlements",
-      "Custom share splits for equal or variable payment shares",
-      "Complete transparency with on-chain verification",
-    ],
-    steps: sharedSteps,
-    faqs: [
-      {
-        question: "Can I split ARB token payments on Arbitrum One?",
-        answer:
-          "Yes! Select Arbitrum network and ARB token when setting up your split event on CryptoSplitter.",
-      },
-      {
-        question: "Why use ARB for splitting expenses?",
-        answer:
-          "ARB settlements take advantage of Arbitrum's low gas costs and fast finality, making small and large splits instant and inexpensive.",
-      },
-    ],
-    relatedSlugs: ["arbitrum", "eth", "usdc", "ethereum"],
+    relatedSlugs: ["usdt", "base", "ethereum", "eth"],
   },
 
   usdt: {
@@ -244,83 +152,24 @@ export const SPLIT_PAGES: Record<string, SplitPage> = {
       {
         question: "How is USDT different from USDC on CryptoSplitter?",
         answer:
-          "The splitting workflow is identical. Choose the stablecoin and network that your group prefers when connecting a wallet.",
+          "The splitting workflow is identical. Choose the stablecoin and network that your group prefers when connecting a wallet and creating an event.",
       },
     ],
     relatedSlugs: ["usdc", "bnb", "polygon", "ethereum"],
-  },
-
-  base: {
-    slug: "base",
-    kind: "chain",
-    label: "Base",
-    headline: "Split crypto bills on Base network",
-    subheadline: "Low-fee expense sharing on Coinbase's L2",
-    intro:
-      "Base offers fast, cheap transactions — perfect for splitting everyday expenses. Use CryptoSplitter to divide restaurant tabs, subscription costs, or group purchases and settle on Base in seconds.",
-    benefits: [
-      "Low gas fees compared to Ethereum mainnet",
-      "Ideal for frequent small splits among friends",
-      "Compatible with Coinbase Wallet, MetaMask, and Rainbow",
-      "ETH and USDC settlements on Base",
-    ],
-    steps: sharedSteps,
-    faqs: [
-      {
-        question: "Why split on Base instead of Ethereum mainnet?",
-        answer:
-          "Base typically has lower transaction fees, making it better for smaller or frequent splits among friends.",
-      },
-      {
-        question: "Can I use Coinbase Wallet with CryptoSplitter on Base?",
-        answer: "Yes. Coinbase Wallet is fully supported alongside MetaMask, Rainbow, Rabby, and Zerion.",
-      },
-    ],
-    relatedSlugs: ["ethereum", "usdc", "eth", "optimism"],
-  },
-
-  arbitrum: {
-    slug: "arbitrum",
-    kind: "chain",
-    label: "Arbitrum",
-    headline: "Split expenses on Arbitrum One",
-    subheadline: "Fast L2 settlements for shared crypto costs",
-    intro:
-      "Arbitrum One combines Ethereum security with lower fees. CryptoSplitter lets your group split expenses and pay on Arbitrum without mainnet gas overhead.",
-    benefits: [
-      "Arbitrum One L2 support with low transaction costs",
-      "Settle in ETH, USDC, USDT, or ARB on Arbitrum",
-      "On-chain transparency for every participant",
-      "Works with all major EVM wallets",
-    ],
-    steps: sharedSteps,
-    faqs: [
-      {
-        question: "Is Arbitrum safe for splitting payments?",
-        answer:
-          "Arbitrum inherits Ethereum's security model. All settlements are standard on-chain transactions you can verify on Arbiscan.",
-      },
-      {
-        question: "Can I split ARB and USDC on Arbitrum?",
-        answer:
-          "Yes. You can split native ETH, ARB governance tokens, or USDC stablecoins on Arbitrum.",
-      },
-    ],
-    relatedSlugs: ["ethereum", "base", "arb", "eth", "usdc"],
   },
 
   ethereum: {
     slug: "ethereum",
     kind: "chain",
     label: "Ethereum",
-    headline: "Split crypto expenses on Ethereum Mainnet",
+    headline: "Split crypto expenses on Ethereum",
     subheadline: "Mainnet expense sharing with full on-chain transparency",
     intro:
       "Split shared costs on Ethereum mainnet with CryptoSplitter. Create an event, invite participants, and let everyone settle their share with a direct wallet payment on the world's leading smart-contract network.",
     benefits: [
       "Native Ethereum mainnet support with MetaMask and major wallets",
       "Immutable on-chain record of every split and payment",
-      "Support for ETH, LINK, and ERC-20 stablecoins like USDC and USDT",
+      "Support for ETH and ERC-20 stablecoins like USDC and USDT",
       "No custodial accounts — funds never pass through us",
     ],
     steps: sharedSteps,
@@ -336,7 +185,66 @@ export const SPLIT_PAGES: Record<string, SplitPage> = {
           "CryptoSplitter also supports Base, Arbitrum, Optimism, Linea, and Scroll for lower-fee settlements.",
       },
     ],
-    relatedSlugs: ["eth", "usdc", "base", "arbitrum", "link"],
+    relatedSlugs: ["eth", "usdc", "base", "arbitrum"],
+  },
+
+  base: {
+    slug: "base",
+    kind: "chain",
+    label: "Base",
+    headline: "Split crypto bills on Base",
+    subheadline: "Low-fee expense sharing on Coinbase's L2",
+    intro:
+      "Base offers fast, cheap transactions — perfect for splitting everyday expenses. Use CryptoSplitter to divide restaurant tabs, subscription costs, or group purchases and settle on Base in seconds.",
+    benefits: [
+      "Low gas fees compared to Ethereum mainnet",
+      "Ideal for frequent small splits among friends",
+      "Compatible with Coinbase Wallet and MetaMask",
+      "ETH and USDC settlements on Base",
+    ],
+    steps: sharedSteps,
+    faqs: [
+      {
+        question: "Why split on Base instead of Ethereum mainnet?",
+        answer:
+          "Base typically has lower transaction fees, making it better for smaller or frequent splits among friends.",
+      },
+      {
+        question: "Can I use Coinbase Wallet with CryptoSplitter on Base?",
+        answer: "Yes. Coinbase Wallet is fully supported alongside MetaMask, Rainbow, and other wallets.",
+      },
+    ],
+    relatedSlugs: ["ethereum", "usdc", "eth", "optimism"],
+  },
+
+  arbitrum: {
+    slug: "arbitrum",
+    kind: "chain",
+    label: "Arbitrum",
+    headline: "Split expenses on Arbitrum",
+    subheadline: "Fast L2 settlements for shared crypto costs",
+    intro:
+      "Arbitrum One combines Ethereum security with lower fees. CryptoSplitter lets your group split expenses and pay on Arbitrum without the mainnet gas overhead.",
+    benefits: [
+      "Arbitrum One L2 support with low transaction costs",
+      "Settle in ETH, USDC, or USDT on Arbitrum",
+      "On-chain transparency for every participant",
+      "Works with all major EVM wallets",
+    ],
+    steps: sharedSteps,
+    faqs: [
+      {
+        question: "Is Arbitrum safe for splitting payments?",
+        answer:
+          "Arbitrum inherits Ethereum's security model. All settlements are standard on-chain transactions you can verify on Arbiscan.",
+      },
+      {
+        question: "Can I bridge funds before splitting on Arbitrum?",
+        answer:
+          "Yes. Bridge ETH or stablecoins to Arbitrum using your preferred bridge, then connect and create a split event.",
+      },
+    ],
+    relatedSlugs: ["ethereum", "base", "optimism", "usdc"],
   },
 
   polygon: {
@@ -358,7 +266,7 @@ export const SPLIT_PAGES: Record<string, SplitPage> = {
       {
         question: "What tokens can I split on Polygon?",
         answer:
-          "You can settle splits using POL/MATIC, USDC, USDT, and other tokens supported on Polygon PoS.",
+          "You can settle splits using MATIC, USDC, USDT, and other tokens supported on Polygon PoS.",
       },
     ],
     relatedSlugs: ["usdc", "usdt", "ethereum", "bnb"],
@@ -383,7 +291,7 @@ export const SPLIT_PAGES: Record<string, SplitPage> = {
       {
         question: "How is Optimism different from Base for splits?",
         answer:
-          "Both are L2s with low fees. Choose whichever network your group already uses — the CryptoSplitter workflow is identical.",
+          "Both are L2s with low fees. Choose whichever network your group already uses — the CryptoSplitter workflow is the same.",
       },
     ],
     relatedSlugs: ["base", "ethereum", "arbitrum", "eth"],
@@ -486,86 +394,6 @@ export const SPLIT_PAGES: Record<string, SplitPage> = {
     ],
     relatedSlugs: ["linea", "ethereum", "base", "usdc"],
   },
-
-  "splitwise-crypto-alternative": {
-    slug: "splitwise-crypto-alternative",
-    kind: "usecase",
-    label: "Crypto Splitwise Alternative",
-    headline: "The Decentralized Splitwise Alternative for Web3",
-    subheadline: "Split bills on-chain with zero subscription fees and instant wallet settlement",
-    intro:
-      "Tired of manual bank transfers, centralized fee limits, and IOUs? CryptoSplitter is the Web3 alternative to Splitwise. Create shared events, calculate custom shares, and let everyone settle directly from their Web3 wallet.",
-    benefits: [
-      "No custodial accounts, no central servers holding your money",
-      "Pay directly with ETH, USDC, USDT, LINK, ARB, and more",
-      "On-chain transparency — permanent verification of paid bills",
-      "Works globally with zero border fees",
-    ],
-    steps: sharedSteps,
-    faqs: [
-      {
-        question: "How is CryptoSplitter better than traditional bill split apps?",
-        answer:
-          "Traditional apps require manual bank transfers or third-party payment processors. CryptoSplitter executes peer-to-peer wallet payments directly on smart contracts with zero middleman holding your funds.",
-      },
-      {
-        question: "Do my friends need an account to use CryptoSplitter?",
-        answer:
-          "No! There are no signups or password forms. Users simply connect their Web3 wallet (MetaMask, Coinbase Wallet, Rainbow, etc.) and approve their share.",
-      },
-    ],
-    relatedSlugs: ["eth", "usdc", "base", "arbitrum", "vacation", "roommates"],
-  },
-
-  vacation: {
-    slug: "vacation",
-    kind: "usecase",
-    label: "Split Vacation Expenses",
-    headline: "Split Group Trips & Travel Bills with Crypto",
-    subheadline: "Hotels, flights, group dinners, and excursions — settled effortlessly on-chain",
-    intro:
-      "Planning a group holiday or ETH conference trip? CryptoSplitter helps traveling crews log expenses in any fiat currency and settle on-chain in USDC, ETH, or Layer-2 tokens.",
-    benefits: [
-      "Log expenses in USD, EUR, GBP, or 30+ fiat currencies while settling in crypto",
-      "Avoid expensive international foreign exchange bank fees",
-      "Custom split percentages for shared hotel rooms and rental cars",
-      "Instant settlement on low-cost L2 networks like Base and Arbitrum",
-    ],
-    steps: sharedSteps,
-    faqs: [
-      {
-        question: "Can we track expenses in EUR or USD and pay in USDC?",
-        answer:
-          "Yes! CryptoSplitter calculates foreign exchange rates so you can log bills in fiat currencies and convert to exact crypto amounts upon settlement.",
-      },
-    ],
-    relatedSlugs: ["usdc", "eth", "base", "arbitrum", "splitwise-crypto-alternative"],
-  },
-
-  roommates: {
-    slug: "roommates",
-    kind: "usecase",
-    label: "Split Roommate Bills",
-    headline: "Split Rent, Utilities & Household Bills in Crypto",
-    subheadline: "Automate shared apartment expenses with roommates without awkward conversations",
-    intro:
-      "Keep housemate expenses transparent and fair. CryptoSplitter makes it easy for roommates to divide monthly rent, internet bills, groceries, and utility costs with crypto settlements.",
-    benefits: [
-      "Monthly recurring ledger for housemates and roommates",
-      "Clear breakdown of who owes what every month",
-      "Stablecoin settlement in USDC/USDT to eliminate price fluctuations",
-      "Immutable on-chain proof of rent payment",
-    ],
-    steps: sharedSteps,
-    faqs: [
-      {
-        question: "Is stablecoin (USDC/USDT) best for roommate rent splits?",
-        answer:
-          "Yes! Using stablecoins ensures your rent share value stays fixed to USD/EUR without market fluctuations during payment.",
-      },
-    ],
-    relatedSlugs: ["usdc", "usdt", "base", "ethereum", "splitwise-crypto-alternative"],
-  },
 };
 
 export const SPLIT_PAGE_SLUGS = Object.keys(SPLIT_PAGES);
@@ -582,4 +410,3 @@ export function getSplitPageSeo(slug: string): SeoConfig | undefined {
 export function getAllSplitPagePaths(): string[] {
   return SPLIT_PAGE_SLUGS.map((slug) => `/split-${slug}`);
 }
-

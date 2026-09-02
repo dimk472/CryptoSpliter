@@ -21,7 +21,7 @@ const PAGES = [
   {
     path: '/',
     title: 'Split Crypto Expenses & Bills On-Chain | CryptoSplitter',
-    description: 'Split crypto expenses & group bills with friends on Ethereum, Base, Polygon & 10+ chains. Create shared events, set shares, and settle payments directly from your wallet.',
+    description: 'Split crypto expenses & group bills with friends on Ethereum, Base, Polygon & 10+ chains. Create shared events and settle payments directly from your wallet.',
     jsonLd: {
       "@context": "https://schema.org",
       "@graph": [
@@ -147,7 +147,7 @@ const PAGES = [
   {
     path: '/split-polygon',
     title: 'Split Crypto Expenses on Polygon | CryptoSplitter',
-    description: 'Split shared crypto expenses on Polygon PoS. Fast, ultra-low fee expense sharing with friends.',
+    description: 'Split shared crypto expenses on Polygon PoS with friends. Fast, transparent, ultra-low fee Web3 expense sharing directly from your wallet.',
     label: 'Polygon',
     faqs: [
       { question: "What tokens can I split on Polygon?", answer: "You can settle splits using POL/MATIC, USDC, USDT, and other supported tokens." },
@@ -155,7 +155,7 @@ const PAGES = [
   },
   {
     path: '/split-splitwise-crypto-alternative',
-    title: 'Crypto Splitwise Alternative – Decentralized Bill Splitting | CryptoSplitter',
+    title: 'Crypto Splitwise Alternative | CryptoSplitter',
     description: 'The Web3 alternative to Splitwise. Split bills on-chain with zero subscription fees and instant Web3 wallet settlement.',
     label: 'Crypto Splitwise Alternative',
     faqs: [
@@ -192,7 +192,7 @@ const PAGES = [
   {
     path: '/split-avalanche',
     title: 'Split Crypto Expenses on Avalanche | CryptoSplitter',
-    description: 'Split shared crypto expenses on Avalanche C-Chain. Fast finality settlements for group expenses.',
+    description: 'Split shared crypto expenses on Avalanche C-Chain. Fast finality and low-cost Web3 settlements for group expenses directly from your wallet.',
     label: 'Avalanche',
     faqs: [
       { question: "What tokens are supported on Avalanche?", answer: "Settle splits in AVAX, USDC, USDT, and popular Avalanche C-Chain tokens." },
@@ -201,7 +201,7 @@ const PAGES = [
   {
     path: '/split-bnb',
     title: 'Split Crypto Expenses on BNB Chain | CryptoSplitter',
-    description: 'Split shared crypto expenses on BNB Chain (BSC). Low gas fee crypto expense splitting for the BNB community.',
+    description: 'Split shared crypto expenses on BNB Chain (BSC). Low gas fee crypto expense splitting for the BNB community directly from your wallet.',
     label: 'BNB Chain',
     faqs: [
       { question: "Is BNB supported for bill splitting?", answer: "Yes! Create events and settle debts directly in BNB or BEP-20 stablecoins on BNB Chain." },
@@ -226,6 +226,62 @@ const PAGES = [
     ],
   },
 ];
+
+function generateFallbackBodyContent(page) {
+  const h1Text = page.title.split('|')[0].trim();
+  const labelText = page.label || 'Crypto Expenses';
+  
+  const navLinks = PAGES.map(p => `<li><a href="${p.path}">${p.label || 'Home'}</a></li>`).join('\n          ');
+
+  return `<div id="root">
+    <header>
+      <nav>
+        <a href="/"><strong>CryptoSplitter</strong></a>
+      </nav>
+    </header>
+    <main>
+      <article>
+        <h1>${h1Text}</h1>
+        <p>${page.description}</p>
+
+        <section>
+          <h2>Split ${labelText} Easily with Web3 Wallets</h2>
+          <p>CryptoSplitter provides a seamless, non-custodial way to split group bills, shared travel expenses, roommate rent, and team costs directly on multiple blockchain networks. With built-in smart contract settlement, participants pay their exact portion using MetaMask, Coinbase Wallet, Rainbow, or any EVM wallet.</p>
+          <p>Eliminate manual debt tracking and centralized bank transfers. CryptoSplitter calculates precise shares, converts currencies if needed, and executes transparent on-chain payments across Ethereum, Base, Arbitrum, Polygon, Optimism, Avalanche, BNB Chain, Linea, and Scroll.</p>
+        </section>
+
+        ${page.faqs && page.faqs.length > 0 ? `
+        <section>
+          <h2>Frequently Asked Questions</h2>
+          ${page.faqs.map(faq => `
+          <div>
+            <h3>${faq.question}</h3>
+            <p>${faq.answer}</p>
+          </div>`).join('')}
+        </section>` : ''}
+
+        <section>
+          <h2>Supported Token and Network Split Guides</h2>
+          <ul>
+            ${navLinks}
+          </ul>
+        </section>
+      </article>
+    </main>
+    <footer>
+      <nav>
+        <p>
+          <a href="/privacy">Privacy Policy</a> | 
+          <a href="/terms">Terms of Use</a> | 
+          <a href="/donate">Donate</a> | 
+          <a href="/CookiePolicy/cookiePolicy.html">Cookie Policy</a> | 
+          <a href="/GDPRCompliance/gdpr.html">GDPR Compliance</a> | 
+          <a href="/SiteMap/siteMap.html">Sitemap</a>
+        </p>
+      </nav>
+    </footer>
+  </div>`;
+}
 
 function prerender() {
   if (!fs.existsSync(TEMPLATE_PATH)) {
@@ -266,6 +322,10 @@ function prerender() {
     // Replace Twitter meta
     html = html.replace(/<meta\s+name="twitter:title"\s+content=".*?"\s*\/?>/s, `<meta name="twitter:title" content="${page.title}" />`);
     html = html.replace(/<meta\s+name="twitter:description"\s+content=".*?"\s*\/?>/s, `<meta name="twitter:description" content="${page.description}" />`);
+
+    // Inject prerendered static body HTML into <div id="root"></div>
+    const fallbackBody = generateFallbackBodyContent(page);
+    html = html.replace('<div id="root"></div>', fallbackBody);
 
     // Ingest Graph JSON-LD Schema
     const jsonLdGraph = page.jsonLd || {

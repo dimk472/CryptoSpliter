@@ -4,13 +4,13 @@
   "description": "Split crypto expenses with friends on-chain across multiple blockchains.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
   "lang": "en",
   "icons": [
     {
       "src": "/favicon.png",
-      "sizes": "any",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ]

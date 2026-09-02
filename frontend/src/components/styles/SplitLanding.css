@@ -1,4 +1,14 @@
-/* Inherits central design system & color tokens from App.css */
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap");
+
+:root {
+  --brand: #4f7bff;
+  --brand-glow: rgba(79, 123, 255, 0.15);
+  --bg: #000000;
+  --surface: #0f1117;
+  --ink: #f1f5f9;
+  --ink-muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.08);
+}
 
 .split-landing {
   min-height: 100vh;
@@ -39,37 +49,8 @@
   padding: 0 20px 64px;
 }
 
-.split-landing-breadcrumbs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--ink-muted);
-  padding-top: 16px;
-  margin-bottom: 8px;
-}
-
-.split-landing-breadcrumbs a {
-  color: var(--ink-muted);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.split-landing-breadcrumbs a:hover {
-  color: var(--brand);
-}
-
-.breadcrumb-separator {
-  color: var(--border);
-}
-
-.breadcrumb-current {
-  color: var(--ink);
-  font-weight: 500;
-}
-
 .split-landing-hero {
-  padding: 24px 0 48px;
+  padding: 32px 0 48px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -119,9 +100,7 @@
   text-decoration: none;
   border-radius: 12px;
   padding: 14px 28px;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: 0 8px 32px var(--brand-glow);
 }
 
@@ -228,9 +207,7 @@
   color: var(--ink-muted);
   text-decoration: none;
   font-size: 14px;
-  transition:
-    border-color 0.2s,
-    color 0.2s;
+  transition: border-color 0.2s, color 0.2s;
 }
 
 .split-landing-related-link:hover {

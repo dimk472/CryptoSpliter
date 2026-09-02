@@ -40,6 +40,14 @@ export const TOKENS: Record<number, TokenConfig[]> = {
         { symbol: "USDC", address: "0x1844478CA634f3a762a2E71E3386837Bd50C947F", native: false, decimals: 6 },
         { symbol: "LINK", address: "0x52869bae3E091e36D7cB7C7D0fE3e9fB8A7aB534", native: false, decimals: 8 },
     ],
+    // Bot TestNet
+    968: [
+        { symbol: "TBOT", address: "0x0000000000000000000000000000000000000000", native: true, decimals: 18 },
+    ],
+    // Bot Mainnet
+    677: [
+        { symbol: "BOT", address: "0x0000000000000000000000000000000000000000", native: true, decimals: 18 },
+    ],
 };
 
 export function getTokensForChain(chainId: number | undefined): TokenConfig[] {
